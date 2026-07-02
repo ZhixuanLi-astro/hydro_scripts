@@ -1,0 +1,5 @@
+plots/*
+tem_time/*
+*.mp4
+*.png
+*.npz
