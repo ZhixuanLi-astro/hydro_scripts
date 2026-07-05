@@ -55,12 +55,13 @@ def main():
     # 4. 构建 ffmpeg 命令，核心改动是加入了 -start_number 参数
     cmd = [
         'ffmpeg',
-        '-r', '50',                       # 输入帧率
+        '-r', '20',                       # 输入帧率
         '-start_number', str(start_number), # 【关键】明确告诉 ffmpeg 从第几号图片开始读取
         '-i', input_pattern,              # 输入图片序列模式
         '-c:v', 'libx264',                # 视频编码器
         '-pix_fmt', 'yuv420p',            # 像素格式（兼容性最好）
         '-y',                             # 覆盖已有视频
+        '-vf', "scale=trunc(iw/2)*2:trunc(ih/2)*2",  # 确保宽高为偶数
         output_file
     ]
 

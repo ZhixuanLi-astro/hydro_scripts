@@ -208,40 +208,76 @@ vx1 = data_prim['vel1']
 vx2 = data_prim['vel2']
 vx3 = data_prim['vel3']
 
-dust_1_rho = data_prim['dust_1_rho']
-dust_1_vx1 = data_prim['dust_1_vel1']
-dust_1_vx2 = data_prim['dust_1_vel2']
-dust_1_vx3 = data_prim['dust_1_vel3']
+dust_id_pat = re.compile(r'^dust_(\d+)_rho$')
+dust_ids = sorted(int(m.group(1)) for k in data_prim.keys() for m in [dust_id_pat.match(k)] if m)
+N_Z = 2 
+N_P = int((dust_ids[-1] - 1)/(N_Z + 1))
 
-dust_2_rho = data_prim['dust_2_rho']
+dust_rho = {did: data_prim[f'dust_{did}_rho'] for did in dust_ids}
+dust_vel = {}
+for did in dust_ids:
+    dust_vel[did] = {}
+    for comp in ['vel1', 'vel2', 'vel3']:
+        key = f'dust_{did}_{comp}'
+        dust_vel[did][comp] = data_prim[key] if key in data_prim else zeros_like(rho)
 
-dust_3_rho = data_prim['dust_3_rho']
-dust_3_vx1 = data_prim['dust_3_vel1']
-dust_3_vx2 = data_prim['dust_3_vel2']
-dust_3_vx3 = data_prim['dust_3_vel3']
+def dust_rho_or_zero(did):
+    return dust_rho[did] if did in dust_rho else zeros_like(rho)
 
-dust_4_rho = data_prim['dust_4_rho']    
+def dust_vel_or_zero(did, comp):
+    if did in dust_vel and comp in dust_vel[did]:
+        return dust_vel[did][comp]
+    return zeros_like(rho)
 
-dust_5_rho = data_prim['dust_5_rho']
-dust_5_vx1 = data_prim['dust_5_vel1']
-dust_5_vx2 = data_prim['dust_5_vel2']
-dust_5_vx3 = data_prim['dust_5_vel3']
+# Backward-compatible aliases used by downstream plotting code.
+dust_1_rho = dust_rho_or_zero(1)
+dust_1_vx1 = dust_vel_or_zero(1, 'vel1')
+dust_1_vx2 = dust_vel_or_zero(1, 'vel2')
+dust_1_vx3 = dust_vel_or_zero(1, 'vel3')
 
-# for number density
-dust_6_rho = data_prim['dust_6_rho'] 
-dust_6_vx1 = data_prim['dust_6_vel1']
-dust_6_vx2 = data_prim['dust_6_vel2']
-dust_6_vx3 = data_prim['dust_6_vel3']
-dust_7_rho = data_prim['dust_7_rho']  
-dust_7_vx1 = data_prim['dust_7_vel1']
-dust_7_vx2 = data_prim['dust_7_vel2']
-dust_7_vx3 = data_prim['dust_7_vel3']
+dust_2_rho = dust_rho_or_zero(2)
+
+dust_3_rho = dust_rho_or_zero(3)
+dust_3_vx1 = dust_vel_or_zero(3, 'vel1')
+dust_3_vx2 = dust_vel_or_zero(3, 'vel2')
+dust_3_vx3 = dust_vel_or_zero(3, 'vel3')
+
+dust_4_rho = dust_rho_or_zero(4)
+
+dust_5_rho = dust_rho_or_zero(5)
+dust_5_vx1 = dust_vel_or_zero(5, 'vel1')
+dust_5_vx2 = dust_vel_or_zero(5, 'vel2')
+dust_5_vx3 = dust_vel_or_zero(5, 'vel3')
+
+dust_6_rho = dust_rho_or_zero(6)
+dust_6_vx1 = dust_vel_or_zero(6, 'vel1')
+dust_6_vx2 = dust_vel_or_zero(6, 'vel2')
+dust_6_vx3 = dust_vel_or_zero(6, 'vel3')
+dust_7_rho = dust_rho_or_zero(7)
+dust_7_vx1 = dust_vel_or_zero(7, 'vel1')
+dust_7_vx2 = dust_vel_or_zero(7, 'vel2')
+dust_7_vx3 = dust_vel_or_zero(7, 'vel3')
 
 #-----------------------------------------
 # user defined variable read
 # #---------------------------------------
 data_uov= athena_read.athdf(DIR+'iceline.out2.'+str(nstep).rjust(5,'0')+'.athdf',face_func_2=face_f_2_power, num_ghost=0)
 tem = data_uov['Tem']
+
+st_pat = re.compile(r'^st_(\d+)$')
+pop_ids_1based = sorted(int(m.group(1)) for k in data_uov.keys() for m in [st_pat.match(k)] if m)
+N_pop = len(pop_ids_1based)
+if N_pop == 0:
+    N_pop = max(1, len(dust_ids)//2)
+
+ice_ids = [2*p + 1 for p in range(N_pop) if (2*p + 1) in dust_ids]
+sil_ids = [2*p + 2 for p in range(N_pop) if (2*p + 2) in dust_ids]
+vapor_id = 2*N_pop + 1 if (2*N_pop + 1) in dust_ids else None
+number_ids = [did for did in dust_ids if did not in set(ice_ids + sil_ids + ([vapor_id] if vapor_id is not None else []))]
+
+st_by_pop = [data_uov[f'st_{pid}'] if f'st_{pid}' in data_uov else zeros_like(tem) for pid in pop_ids_1based]
+m_p_by_pop = [data_uov[f'm_p_{pid}'] if f'm_p_{pid}' in data_uov else zeros_like(tem) for pid in pop_ids_1based]
+s_p_by_pop = [data_uov[f's_p_{pid}'] if f's_p_{pid}' in data_uov else zeros_like(tem) for pid in pop_ids_1based]
 
 # dif = data_uov['dif']
 try:
@@ -251,13 +287,13 @@ except:
 mmax = data_uov['mmax']
 mmax_xz = mmax[0,:,:].T
 mmin = 1e-12
-st = data_uov['st_1']
-st1 = data_uov['st_2']
+st = st_by_pop[0] if len(st_by_pop) > 0 else zeros_like(tem)
+st1 = st_by_pop[1] if len(st_by_pop) > 1 else zeros_like(tem)
 # tem_equi = data_uov['st']
-m_p = data_uov['m_p_1']
-m_p1 = data_uov['m_p_2']
-s_p = data_uov['s_p_1']
-s_p1 = data_uov['s_p_2']
+m_p = m_p_by_pop[0] if len(m_p_by_pop) > 0 else zeros_like(tem)
+m_p1 = m_p_by_pop[1] if len(m_p_by_pop) > 1 else zeros_like(tem)
+s_p = s_p_by_pop[0] if len(s_p_by_pop) > 0 else zeros_like(tem)
+s_p1 = s_p_by_pop[1] if len(s_p_by_pop) > 1 else zeros_like(tem)
 # dfvdt = data_uov['dfvdt']
 q_z = data_uov['q_z']
 try:
@@ -266,22 +302,41 @@ except:
     q_int = ones_like(q_z) 
 q_latent = data_uov['q_latent']
 q_diff = data_uov['q_diff']
-flx_ice_x1 = data_uov['flx_ice_x1_1']
-flx_ice_x2 = data_uov['flx_ice_x2_1']
 flx_vap_x1 = data_uov['flx_vap_x1']
 flx_vap_x2 = data_uov['flx_vap_x2']
 flx_x1 = data_uov['flx_x1']
 flx_x2 = data_uov['flx_x2']
 
-# for multiple dustfluids
-flx_ice1_x1 = data_uov['flx_ice_x1_2']
-flx_ice1_x2 = data_uov['flx_ice_x2_2']
+flx_ice_x1_by_pop = [data_uov[f'flx_ice_x1_{pid}'] if f'flx_ice_x1_{pid}' in data_uov else zeros_like(tem) for pid in pop_ids_1based]
+flx_ice_x2_by_pop = [data_uov[f'flx_ice_x2_{pid}'] if f'flx_ice_x2_{pid}' in data_uov else zeros_like(tem) for pid in pop_ids_1based]
+flx_sil_x1_by_pop = [data_uov[f'flx_sil_x1_{pid}'] if f'flx_sil_x1_{pid}' in data_uov else zeros_like(tem) for pid in pop_ids_1based]
+flx_sil_x2_by_pop = [data_uov[f'flx_sil_x2_{pid}'] if f'flx_sil_x2_{pid}' in data_uov else zeros_like(tem) for pid in pop_ids_1based]
 
-flx_sil_x1 = data_uov['flx_sil_x1_1']
-flx_sil_x2 = data_uov['flx_sil_x2_1']
+flx_ice_x1 = flx_ice_x1_by_pop[0] if len(flx_ice_x1_by_pop) > 0 else zeros_like(tem)
+flx_ice_x2 = flx_ice_x2_by_pop[0] if len(flx_ice_x2_by_pop) > 0 else zeros_like(tem)
+flx_ice1_x1 = flx_ice_x1_by_pop[1] if len(flx_ice_x1_by_pop) > 1 else zeros_like(tem)
+flx_ice1_x2 = flx_ice_x2_by_pop[1] if len(flx_ice_x2_by_pop) > 1 else zeros_like(tem)
+flx_sil_x1 = flx_sil_x1_by_pop[0] if len(flx_sil_x1_by_pop) > 0 else zeros_like(tem)
+flx_sil_x2 = flx_sil_x2_by_pop[0] if len(flx_sil_x2_by_pop) > 0 else zeros_like(tem)
+flx_sil1_x1 = flx_sil_x1_by_pop[1] if len(flx_sil_x1_by_pop) > 1 else zeros_like(tem)
+flx_sil1_x2 = flx_sil_x2_by_pop[1] if len(flx_sil_x2_by_pop) > 1 else zeros_like(tem)
 
-flx_sil1_x1 = data_uov['flx_sil_x1_2']
-flx_sil1_x2 = data_uov['flx_sil_x2_2']
+# Keep legacy variable names but bind them to inferred semantic ids.
+if vapor_id is not None:
+    dust_5_rho = dust_rho_or_zero(vapor_id)
+    dust_5_vx1 = dust_vel_or_zero(vapor_id, 'vel1')
+    dust_5_vx2 = dust_vel_or_zero(vapor_id, 'vel2')
+    dust_5_vx3 = dust_vel_or_zero(vapor_id, 'vel3')
+if len(number_ids) > 0:
+    dust_6_rho = dust_rho_or_zero(number_ids[0])
+    dust_6_vx1 = dust_vel_or_zero(number_ids[0], 'vel1')
+    dust_6_vx2 = dust_vel_or_zero(number_ids[0], 'vel2')
+    dust_6_vx3 = dust_vel_or_zero(number_ids[0], 'vel3')
+if len(number_ids) > 1:
+    dust_7_rho = dust_rho_or_zero(number_ids[1])
+    dust_7_vx1 = dust_vel_or_zero(number_ids[1], 'vel1')
+    dust_7_vx2 = dust_vel_or_zero(number_ids[1], 'vel2')
+    dust_7_vx3 = dust_vel_or_zero(number_ids[1], 'vel3')
 
 #get the density change by phase_change process 
 drho_exist = True
@@ -307,12 +362,21 @@ z = R* cos(THETA)
 x_xz = x[index_phi,:,:].T
 y_xz = z[index_phi,:,:].T
 
-dust_1_vx1_xz = dust_1_vx1[index_phi,:,:].T 
-dust_1_vx2_xz = dust_1_vx2[index_phi,:,:].T 
-dust_1_vx3_xz = dust_1_vx3[index_phi,:,:].T 
-dust_3_vx1_xz = dust_3_vx1[index_phi,:,:].T 
-dust_3_vx2_xz = dust_3_vx2[index_phi,:,:].T 
-dust_3_vx3_xz = dust_3_vx3[index_phi,:,:].T 
+dust_vel_xz = {
+    did: {
+        'vel1': dust_vel[did]['vel1'][index_phi,:,:].T,
+        'vel2': dust_vel[did]['vel2'][index_phi,:,:].T,
+        'vel3': dust_vel[did]['vel3'][index_phi,:,:].T,
+    }
+    for did in dust_ids
+}
+
+dust_1_vx1_xz = dust_vel_xz[1]['vel1'] if 1 in dust_vel_xz else zeros_like(rho[index_phi,:,:].T)
+dust_1_vx2_xz = dust_vel_xz[1]['vel2'] if 1 in dust_vel_xz else zeros_like(rho[index_phi,:,:].T)
+dust_1_vx3_xz = dust_vel_xz[1]['vel3'] if 1 in dust_vel_xz else zeros_like(rho[index_phi,:,:].T)
+dust_3_vx1_xz = dust_vel_xz[3]['vel1'] if 3 in dust_vel_xz else zeros_like(rho[index_phi,:,:].T)
+dust_3_vx2_xz = dust_vel_xz[3]['vel2'] if 3 in dust_vel_xz else zeros_like(rho[index_phi,:,:].T)
+dust_3_vx3_xz = dust_vel_xz[3]['vel3'] if 3 in dust_vel_xz else zeros_like(rho[index_phi,:,:].T)
 
 # cell center coordinate
 THETA, PHI, R = meshgrid(theta,phi,rad)
@@ -353,13 +417,14 @@ flx_sil1_x2 *= dS_theta*UNIT_Fm
 # slices
 index_phi = 0
 rho_xz = rho[index_phi,:,:].T
-dust_1_rho_xz = dust_1_rho[index_phi,:,:].T
-dust_2_rho_xz = dust_2_rho[index_phi,:,:].T
-dust_3_rho_xz = dust_3_rho[index_phi,:,:].T
-dust_4_rho_xz = dust_4_rho[index_phi,:,:].T
-dust_5_rho_xz = dust_5_rho[index_phi,:,:].T
-dust_6_rho_xz = dust_6_rho[index_phi,:,:].T
-dust_7_rho_xz = dust_7_rho[index_phi,:,:].T
+dust_rho_xz = {did: dust_rho[did][index_phi,:,:].T for did in dust_ids}
+dust_1_rho_xz = dust_rho_xz[1] if 1 in dust_rho_xz else zeros_like(rho_xz)
+dust_2_rho_xz = dust_rho_xz[2] if 2 in dust_rho_xz else zeros_like(rho_xz)
+dust_3_rho_xz = dust_rho_xz[3] if 3 in dust_rho_xz else zeros_like(rho_xz)
+dust_4_rho_xz = dust_rho_xz[4] if 4 in dust_rho_xz else zeros_like(rho_xz)
+dust_5_rho_xz = dust_rho_xz[vapor_id] if vapor_id in dust_rho_xz else zeros_like(rho_xz)
+dust_6_rho_xz = dust_rho_xz[number_ids[0]] if len(number_ids) > 0 and number_ids[0] in dust_rho_xz else zeros_like(rho_xz)
+dust_7_rho_xz = dust_rho_xz[number_ids[1]] if len(number_ids) > 1 and number_ids[1] in dust_rho_xz else zeros_like(rho_xz)
 # prs_xz = prs[index_phi,:,:].T
 tem_xz = tem[index_phi,:,:].T
 # tem_equi_xz = tem_equi[index_phi,:,:].T
@@ -390,16 +455,15 @@ except:
 
 #plot the rho
 d2g_snow = 1.e-3
-dust_5_rho_mod = deepcopy(dust_5_rho_xz)
-dust_1_rho_mod = deepcopy(dust_1_rho_xz)
-dust_3_rho_mod = deepcopy(dust_3_rho_xz)
-dust_2_rho_mod = deepcopy(dust_2_rho_xz)
-dust_4_rho_mod = deepcopy(dust_4_rho_xz)
-dust_5_rho_mod[dust_5_rho_xz/rho_xz < d2g_snow] = nan
-dust_1_rho_mod[dust_1_rho_xz/rho_xz < d2g_snow] = nan
-dust_3_rho_mod[dust_3_rho_xz/rho_xz < d2g_snow] = nan
-dust_2_rho_mod[dust_2_rho_xz/rho_xz < d2g_snow] = nan
-dust_4_rho_mod[dust_4_rho_xz/rho_xz < d2g_snow] = nan
+dust_rho_mod_xz = {did: deepcopy(arr) for did, arr in dust_rho_xz.items()}
+for did in dust_rho_mod_xz:
+    dust_rho_mod_xz[did][dust_rho_xz[did]/rho_xz < d2g_snow] = nan
+
+dust_5_rho_mod = dust_rho_mod_xz[5] if 5 in dust_rho_mod_xz else zeros_like(rho_xz)
+dust_1_rho_mod = dust_rho_mod_xz[1] if 1 in dust_rho_mod_xz else zeros_like(rho_xz)
+dust_3_rho_mod = dust_rho_mod_xz[3] if 3 in dust_rho_mod_xz else zeros_like(rho_xz)
+dust_2_rho_mod = dust_rho_mod_xz[2] if 2 in dust_rho_mod_xz else zeros_like(rho_xz)
+dust_4_rho_mod = dust_rho_mod_xz[4] if 4 in dust_rho_mod_xz else zeros_like(rho_xz)
 
 
 #find the scale height location: 
@@ -480,7 +544,8 @@ sil1_flx_z_xz = sil1_flx_z[:,0,:]
 
 for j in range(numz):
     for i in range(numx):
-        if(fabs(x1_exp_half[i]/x3_exp[j]) < tan(0.8) or (x1_exp_half[i]**2 + x3_exp[j]**2 > xs**2) ):
+        ratio_xz = fabs(x1_exp_half[i]/x3_exp[j]) if x3_exp[j] != 0.0 else inf
+        if(ratio_xz < tan(0.8) or (x1_exp_half[i]**2 + x3_exp[j]**2 > xs**2) ):
             vx_xz[j,i] = 0.0
             vz_xz[j,i] = 0.0
             dust_1_vx_xz[j,i] = 0.0
@@ -509,19 +574,24 @@ for j in range(tau_opt.shape[1]):
     dx2 = rad*L_norm*(theta_f[1]-theta_f[0])
     tau_opt[:,j] += tau_opt[:,j-1] + rho_xz[:,j]*Get_kappa(kappa0, 0.0, dust_5_rho_xz/rho_xz)[:,j] * dx2
 
-tau_ir = tau_opt/f_vi
+tau_ir = tau_opt/3
 
 dif = (x/3.0)*0.003
 dif_intpl = (xx_exp_mesh/3.0)*0.003
 
 rho_intpl = scaler_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0.0]),zz_exp,rho.T)[:,0,:]
-dust_1_rho_intpl = scaler_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0.0]),zz_exp,dust_1_rho.T)[:,0,:]
-dust_2_rho_intpl = scaler_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0.0]),zz_exp,dust_2_rho.T)[:,0,:]
-dust_3_rho_intpl = scaler_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0.0]),zz_exp,dust_3_rho.T)[:,0,:]
-dust_4_rho_intpl = scaler_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0.0]),zz_exp,dust_4_rho.T)[:,0,:]
-dust_5_rho_intpl = scaler_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0.0]),zz_exp,dust_5_rho.T)[:,0,:]
-dust_6_rho_intpl = scaler_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0.0]),zz_exp,dust_6_rho.T)[:,0,:]
-dust_7_rho_intpl = scaler_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0.0]),zz_exp,dust_7_rho.T)[:,0,:]
+dust_rho_intpl = {
+    did: scaler_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0.0]),zz_exp,dust_rho[did].T)[:,0,:]
+    for did in dust_ids
+}
+
+dust_1_rho_intpl = dust_rho_intpl[1] if 1 in dust_rho_intpl else zeros_like(rho_intpl)
+dust_2_rho_intpl = dust_rho_intpl[2] if 2 in dust_rho_intpl else zeros_like(rho_intpl)
+dust_3_rho_intpl = dust_rho_intpl[3] if 3 in dust_rho_intpl else zeros_like(rho_intpl)
+dust_4_rho_intpl = dust_rho_intpl[4] if 4 in dust_rho_intpl else zeros_like(rho_intpl)
+dust_5_rho_intpl = dust_rho_intpl[vapor_id] if vapor_id in dust_rho_intpl else zeros_like(rho_intpl)
+dust_6_rho_intpl = dust_rho_intpl[number_ids[0]] if len(number_ids) > 0 and number_ids[0] in dust_rho_intpl else zeros_like(rho_intpl)
+dust_7_rho_intpl = dust_rho_intpl[number_ids[1]] if len(number_ids) > 1 and number_ids[1] in dust_rho_intpl else zeros_like(rho_intpl)
 
 dif_intpl = scaler_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0.0]),zz_exp,dif.T)[:,0,:]
 st_intpl = scaler_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0.0]),zz_exp,st.T)[:,0,:]
@@ -575,13 +645,8 @@ for j in range(len(zz_exp)):
     for i in range(len(xx_exp)):
         if((fabs(zz_exp[j]/xx_exp[i]) > tan(pi/2-1.3) or (xx_exp[i]**2 + zz_exp[j]**2 > xs**2) or (xx_exp[i]**2 + zz_exp[j]**2 < R_inner**2))):
             rho_intpl[j,i] = 0.0
-            dust_1_rho_intpl[j,i] = 0.0
-            dust_2_rho_intpl[j,i] = 0.0
-            dust_3_rho_intpl[j,i] = 0.0
-            dust_4_rho_intpl[j,i] = 0.0
-            dust_5_rho_intpl[j,i] = 0.0
-            dust_6_rho_intpl[j,i] = 0.0
-            dust_7_rho_intpl[j,i] = 0.0
+            for did in dust_rho_intpl:
+                dust_rho_intpl[did][j,i] = 0.0
             flux_vap_x_intpl[j,i] = 0.0
             flux_vap_z_intpl[j,i] = 0.0
             flux_gas_x_intpl[j,i] = 0.0
@@ -594,16 +659,18 @@ UNIT_SIGMA = UNIT_DEN*UNIT_L
 dz = (zz_exp[1]-zz_exp[0])*AU/UNIT_L
 dx = (xx_exp[1]-xx_exp[0])*AU/UNIT_L
 sigma_gas =  sum(rho_intpl*dz,axis = 0)*2.0 *UNIT_SIGMA # remember to add up 2 wings
-sigma_ice0 = sum(dust_1_rho_intpl*dz,axis = 0)*2.0 *UNIT_SIGMA
-sigma_sil0 = sum(dust_2_rho_intpl*dz,axis = 0)*2.0 *UNIT_SIGMA
-sigma_ice1 = sum(dust_3_rho_intpl*dz,axis = 0)*2.0 *UNIT_SIGMA
-sigma_sil1 = sum(dust_4_rho_intpl*dz,axis = 0)*2.0 *UNIT_SIGMA
-sigma_ice = sigma_ice0 + sigma_ice1
-sigma_sil = sigma_sil0 + sigma_sil1
-# the number density [26.06.02]
-n_col0 = sum(dust_6_rho_intpl*dz,axis = 0)*2.0 *UNIT_L**2
-n_col1 = sum(dust_7_rho_intpl*dz,axis = 0)*2.0 *UNIT_L**2
-sigma_vap = sum(dust_5_rho_intpl*dz,axis = 0)*2.0 *UNIT_SIGMA 
+sigma_ice_by_pop = [sum(dust_rho_intpl[iid]*dz,axis=0)*2.0*UNIT_SIGMA for iid in ice_ids]
+sigma_sil_by_pop = [sum(dust_rho_intpl[sid]*dz,axis=0)*2.0*UNIT_SIGMA for sid in sil_ids]
+sigma_ice0 = sigma_ice_by_pop[0] if len(sigma_ice_by_pop) > 0 else zeros_like(sigma_gas)
+sigma_ice1 = sigma_ice_by_pop[1] if len(sigma_ice_by_pop) > 1 else zeros_like(sigma_gas)
+sigma_sil0 = sigma_sil_by_pop[0] if len(sigma_sil_by_pop) > 0 else zeros_like(sigma_gas)
+sigma_sil1 = sigma_sil_by_pop[1] if len(sigma_sil_by_pop) > 1 else zeros_like(sigma_gas)
+sigma_ice = sum(sigma_ice_by_pop, axis=0) if len(sigma_ice_by_pop) > 0 else zeros_like(sigma_gas)
+sigma_sil = sum(sigma_sil_by_pop, axis=0) if len(sigma_sil_by_pop) > 0 else zeros_like(sigma_gas)
+n_col_by_id = {did: sum(dust_rho_intpl[did]*dz,axis=0)*2.0*UNIT_L**2 for did in number_ids}
+n_col0 = n_col_by_id[number_ids[0]] if len(number_ids) > 0 else zeros_like(sigma_gas)
+n_col1 = n_col_by_id[number_ids[1]] if len(number_ids) > 1 else zeros_like(sigma_gas)
+sigma_vap = sum(dust_rho_intpl[vapor_id]*dz,axis = 0)*2.0 *UNIT_SIGMA if vapor_id is not None else zeros_like(sigma_gas)
 dust_2_dif_x = zeros((len(zz_exp), len(xx_exp)))
 dust_3_dif_x = zeros((len(zz_exp), len(xx_exp)))
 dust_1_dif_x = zeros((len(zz_exp), len(xx_exp)))
@@ -613,10 +680,15 @@ Hp1_idx, yy1 = find_dust_scaleheight([dust_3_rho_intpl, dust_4_rho_intpl], y_xz_
 Hpg_idx, yy_g = find_dust_scaleheight([[], rho_intpl], y_xz_c)
 
 for j in range(len(zz_exp)):
-    dust_2_dif_x[j,:] = -rho_intpl[j,:]* dif_peb_intpl[j,:]*dfdx_5pts(xx_exp*L_norm, dust_2_rho_intpl[j,:]/rho_intpl[j,:])
-    dust_3_dif_x[j,:] = -rho_intpl[j,:]* dif_peb1_intpl[j,:]*dfdx_5pts(xx_exp*L_norm, dust_3_rho_intpl[j,:]/rho_intpl[j,:])
-    dust_1_dif_x[j,:] = -rho_intpl[j,:]* dif_peb_intpl[j,:]*dfdx_5pts(xx_exp*L_norm, dust_1_rho_intpl[j,:]/rho_intpl[j,:])
-    dust_4_dif_x[j,:] = -rho_intpl[j,:]* dif_peb1_intpl[j,:]*dfdx_5pts(xx_exp*L_norm, dust_4_rho_intpl[j,:]/rho_intpl[j,:])
+    rho_safe = where(rho_intpl[j,:] > 0.0, rho_intpl[j,:], 1.0)
+    d2g_2 = where(rho_intpl[j,:] > 0.0, dust_2_rho_intpl[j,:]/rho_safe, 0.0)
+    d2g_3 = where(rho_intpl[j,:] > 0.0, dust_3_rho_intpl[j,:]/rho_safe, 0.0)
+    d2g_1 = where(rho_intpl[j,:] > 0.0, dust_1_rho_intpl[j,:]/rho_safe, 0.0)
+    d2g_4 = where(rho_intpl[j,:] > 0.0, dust_4_rho_intpl[j,:]/rho_safe, 0.0)
+    dust_2_dif_x[j,:] = -rho_intpl[j,:]* dif_peb_intpl[j,:]*dfdx_5pts(xx_exp*L_norm, d2g_2)
+    dust_3_dif_x[j,:] = -rho_intpl[j,:]* dif_peb1_intpl[j,:]*dfdx_5pts(xx_exp*L_norm, d2g_3)
+    dust_1_dif_x[j,:] = -rho_intpl[j,:]* dif_peb_intpl[j,:]*dfdx_5pts(xx_exp*L_norm, d2g_1)
+    dust_4_dif_x[j,:] = -rho_intpl[j,:]* dif_peb1_intpl[j,:]*dfdx_5pts(xx_exp*L_norm, d2g_4)
 
 for j in range(len(zz_exp)):
     for i in range(len(xx_exp)):
@@ -629,18 +701,49 @@ for j in range(len(zz_exp)):
         if(isnan(dust_4_dif_x[j,i])):
             dust_4_dif_x[j,i] = 0.0
 
+fig, ax = plt.subplots(figsize=(7, 5))
+ax.set_ylim(0, 0.2)
+ax.set_xlim(rin/L_norm, 2)
+
+crhov =  ax.contourf(x_xz_c,y_xz_c,dust_5_rho_xz*UNIT_DEN,levels = logspace(-20,-10,10), norm = LogNorm(), cmap = 'Greys', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
+crho1= ax.contourf(x_xz_c,y_xz_c,dust_3_rho_mod/rho_xz,levels = logspace(log10(d2g_snow), 0,15), norm = LogNorm(), cmap = 'Blues', alpha = 1.0, extend = 'both', antialiased = True,zorder=4)
+# ax0 =  ax.contourf(x_xz_c,-y_xz_c,dust_5_rho_mod,levels = logspace(log10(d2g_snow),log10(1.0),25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
+# ax00 = ax.contourf(x_xz_c,-y_xz_c,dust_1_rho_mod,levels = logspace(log10(d2g_snow),log10(0.3),20), norm = LogNorm(), cmap = 'Blues', alpha = 1, extend = 'both', antialiased=True, zorder=4)
+cbarv = fig.colorbar(crhov, ax = ax, orientation = 'vertical',pad = -0.15, shrink = 0.45, anchor=(0,1))
+# cbarv.ax.set_title(r'$\rho_{vap}$ [g cm$^{-3}$]', fontsize = 12)
+cbarv.ax.set_ylabel(r'$\rho_{vap}$ [g cm$^{-3}$]', fontsize = 12)
+cbarv.set_ticks(logspace(-20,-10,6))
+cbarv.set_ticklabels([r'$10^{-20}$',r'$10^{-18}$',r'$10^{-16}$',r'$10^{-14}$',r'$10^{-12}$',r'$10^{-10}$'], fontsize = 10)
+cbar1 = fig.colorbar(crho1, ax = ax, orientation = 'vertical',pad = 0.02, shrink = 0.45, anchor=(0,0))
+cbar1.ax.set_ylabel(r'$\rho_{ice}/\rho_{gas}$', fontsize = 12)
+cbar1.set_ticks(logspace(log10(d2g_snow),0,4))
+cbar1.set_ticklabels([r'$10^{-3}$',r'$10^{-2}$',r'$10^{-1}$',r'$10^{0}$'], fontsize = 10)
+
+
+#over plot temperature profile
+ax.set_xlabel(r'$R$ [AU]', fontsize = 12)
+ax.set_ylabel(r'$z$ [AU]', fontsize = 12)
+# ax1 = ax.pcolormesh(x_xz,y_xz,tem_xz,norm = Normalize(vmin = 100,vmax = 600,clip = True) ,cmap = 'coolwarm', alpha = 1)
+C_Tem = ax.contour(x_xz_c,y_xz_c,tem_xz,levels = linspace(100,600,6,endpoint=True), cmap = 'coolwarm', alpha = 1.0, linewidths = 3.0, linstyles = 'dashed')
+C = ax.contour(x_xz_c,y_xz_c,tau_ir,levels = array([1.0]), colors = 'purple', linestyles = 'dashed', linewidths = 3.0, zorder = 5)
+ax.annotate(r'$\tau_{ir}=1$', xy=(1.5, 0.15), xytext=(1.5, 0.05), fontsize = 20, color = 'red', zorder = 10, fontweight = 'bold',rotation = 20)
+
+fig.savefig('./plots/vap_obs_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500)
+
+import pdb; pdb.set_trace()
 
 fig, axs = plt.subplots(2, 1, figsize=(6, 6))
-rrr = mmax[0].T/m_p1[0].T
+m_p1_safe = where(m_p1[0].T > 0.0, m_p1[0].T, nan)
+rrr = mmax[0].T/m_p1_safe
 axs[0].set_title('time: {:.2f} yr'.format(simu_time*UNIT_T/YR),loc='left')
-cbar = axs[0].contourf(x_xz_c, y_xz_c,rrr, levels = logspace(0,5, 11),
-                    norm = LogNorm(vmin=1.0 ,vmax=100000.0),extend = 'both', cmap = cm.viridis)
+cbar = axs[0].contourf(x_xz_c, y_xz_c,rrr, levels = logspace(-4,5, 11),
+                    norm = LogNorm(vmin=1e-4 ,vmax=100000.0),extend = 'both', cmap = cm.viridis)
 axs[0].contour(x_xz_c, y_xz_c, rrr, levels = [7.0], colors = 'white', linewidths = 1.5)
 cbar = fig.colorbar(cbar, format=ticker.FuncFormatter(formatnum), ax = axs[0], orientation = 'vertical',)
 cbar.set_ticks([1, 10, 100, 1000, 1e4, 1e5])
 cbar.ax.set_title('$m_{max}/m_1$')
 
-bbar = axs[1].contourf(x_xz_c, y_xz_c, mmax[0].T, levels = logspace(-6,-1,16), 
+bbar = axs[1].contourf(x_xz_c, y_xz_c, mmax[0].T, levels = logspace(-12,-1,16), 
                        norm = LogNorm(), extend = 'both',cmap = cm.viridis)
 cbarmmax = fig.colorbar(bbar, format=ticker.FuncFormatter(formatnum), ax = axs[1], orientation = 'vertical',)
 cbarmmax.set_ticks([1e-5, 1e-4, 1e-3, 1e-2, 1e-1])
@@ -701,15 +804,21 @@ axs[0,2].set_title("time: {:.2f} yr".format(simu_time*UNIT_T/YR),loc= 'right', y
 axs[0,0].set_ylabel(r'$\Sigma$ [g/cm$^2$]', fontsize = 12)
 
 # axs[0,0].set_yscale('log')
-axs[0,0].set_ylim(1e-2, 50)
+axs[0,0].set_ylim(1e-2, 30)
 # sax[0].plot(xx_exp,(sigma_gas-sigma_vap)*0.4, color = 'k', alpha = 1.0, label = '$ f_{\mathrm{i/g}} \Sigma_{\mathrm{xy}}$')
 # shere the 0.4 is from the 0.8/2, in which 0.8 is the dust-to-gas flux ratio, so the vapor should be the half of it
 axs[0,0].plot(xx_exp,(sigma_gas)*0.4, color = 'k', linestyle='-', alpha = 1.0, label = 'gas')
 axs[0,0].plot(xx_exp,sqrt(2*pi)*0.4*(xx_exp/3)**(-1)*UNIT_SIGMA,color = 'grey',linewidth = 5, alpha = 0.5)
-axs[0,0].plot(xx_exp, sigma_ice0, c = colD['si'], lw = lwD['si'], label = 'ice 0')
-axs[0,0].plot(xx_exp, sigma_sil0, c = colD['ss'], lw = lwD['ss'], label = 'silicate 0')
-axs[0,0].plot(xx_exp, sigma_ice1, c = colD['li'], lw = lwD['li'], label = 'ice 1')
-axs[0,0].plot(xx_exp, sigma_sil1, c = colD['ls'], lw = lwD['ls'], label = 'silicate 1')
+ice_style = [('si', 'ice {}'), ('li', 'ice {}')]
+sil_style = [('ss', 'silicate {}'), ('ls', 'silicate {}')]
+for p in range(len(sigma_ice_by_pop)):
+    i_style = p if p < len(ice_style) else len(ice_style)-1
+    key = ice_style[i_style][0]
+    axs[0,0].plot(xx_exp, sigma_ice_by_pop[p], c = colD[key], lw = lwD[key], label = ice_style[i_style][1].format(p))
+for p in range(len(sigma_sil_by_pop)):
+    i_style = p if p < len(sil_style) else len(sil_style)-1
+    key = sil_style[i_style][0]
+    axs[0,0].plot(xx_exp, sigma_sil_by_pop[p], c = colD[key], lw = lwD[key], label = sil_style[i_style][1].format(p))
 axs[0,0].plot(xx_exp, sigma_vap , c = colD['va'], lw = lwD['va'], label = 'vapor') 
 
 #plot the column density 
@@ -736,13 +845,14 @@ crho1= axs[0,1].contourf(x_xz_c,y_xz_c,dust_3_rho_mod,levels = logspace(log10(d2
 ax0 = axs[0,1].contourf(x_xz_c,-y_xz_c,dust_5_rho_mod,levels = logspace(log10(d2g_snow),log10(1.0),25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
 ax00 = axs[0,1].contourf(x_xz_c,-y_xz_c,dust_1_rho_mod,levels = logspace(log10(d2g_snow),log10(0.3),20), norm = LogNorm(), cmap = 'Blues', alpha = 1, extend = 'both', antialiased=True, zorder=4)
 
-# import pdb; pdb.set_trace()
 axs[0,1].plot(xx_exp, -yy0, '--', c='k', lw=1, zorder=10)
 axs[0,1].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10)
 #zxl: this we change to the sum of the ice in different populations.
 ice_rho_xz_tot = dust_1_rho_xz + dust_3_rho_xz
 axs[0,1].contour(x_xz_c,y_xz_c, dust_3_rho_xz/rho_xz,levels = [d2g_snow], cmap = 'Blues_r', norm = LogNorm(), alpha = 0.7, linewidths = 3.0, zorder = 5)
 axs[0,1].contour(x_xz_c,-y_xz_c, dust_1_rho_xz/rho_xz,levels = [d2g_snow], cmap = 'Blues_r', alpha = 0.7, linewidths = 3.0, zorder = 4)
+axs[0,1].contour(x_xz_c,y_xz_c,tau_ir,levels = array([0.5,1.0]), colors = 'black', linestyles = 'dotted', zorder = 20)
+axs[0,1].contour(x_xz_c,-y_xz_c,tau_ir,levels = array([0.5,1.0]), colors = 'black', linestyles = 'dotted', zorder = 20)
 #label the panels in the lower left corner
 axs[0,1].text(0.05, 0.95, '$pop_1$', transform=axs[0,1].transAxes, fontsize=18, fontweight='bold', va='top', ha='left')
 axs[0,1].text(0.05, 0.05, '$pop_0$', transform=axs[0,1].transAxes, fontsize=18, fontweight='bold', va='bottom', ha='left')
@@ -788,8 +898,10 @@ cbarvap = fig.colorbar(ax0, ax=axs[0,1], location = 'right', shrink = 0.45, pad 
 cbarvap.set_ticks([1e-2, 1e-1, 1.0], labels = ['$10^{-2}$', '$10^{-1}$', '$10^{0}$'])
 cbarvap.ax.set_title(r'$\rho_{\mathrm{vap}} [g/cm^3]$', fontsize = 12)
 
-watercomp0 = dust_1_rho_xz/(dust_1_rho_xz + dust_2_rho_xz) 
-watercomp1 = dust_3_rho_xz/(dust_3_rho_xz + dust_4_rho_xz) 
+den0 = dust_1_rho_xz + dust_2_rho_xz
+den1 = dust_3_rho_xz + dust_4_rho_xz
+watercomp0 = where(den0 > 0.0, dust_1_rho_xz/den0, 0.0)
+watercomp1 = where(den1 > 0.0, dust_3_rho_xz/den1, 0.0)
 #plot the dust mass contour 
 axs[0,2].set_xlabel(r'$R$ [AU]', fontsize = 12)
 axs[0,2].set_ylabel(r'$z$ [AU]', fontsize = 12)
@@ -799,9 +911,9 @@ axs[0,2].set_ylim(-0.25, 0.25)
 axs[0,2].plot(xx_exp, -yy1, '--', c='k', lw=1, zorder=10)
 axs[0,2].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10)
 
-c1 = axs[0,2].contourf(x_xz_c, y_xz_c, m_p1_xz, levels = logspace(-12, -1, 21), norm = LogNorm(),cmap = 'Purples', alpha = 1.0)
+c1 = axs[0,2].contourf(x_xz_c, y_xz_c, m_p1_xz, levels = logspace(-12, -1, 21), norm = LogNorm(),cmap = 'Purples', alpha = 1.0, extend = 'both')
 axs[0,2].contour(x_xz_c, -y_xz_c, watercomp1, levels = [0.5], colors = 'k', linewidths = 2.0)
-axs[0,2].contourf(x_xz_c, -y_xz_c, watercomp1, levels = linspace(0.3,0.7,21), cmap = 'Blues', alpha = 0.8, extend = 'both')
+axs[0,2].contourf(x_xz_c, -y_xz_c, watercomp1, levels = linspace(0.1,0.7,21), cmap = 'Blues', alpha = 0.8, extend = 'both')
 cbar0 = fig.colorbar(c1, ax=axs[0,2], location = 'right', shrink = 0.8, pad = 0.04, anchor=(0,0))
 cbar0.ax.set_title(r'$m [g]$', fontsize = 12)
 
@@ -817,8 +929,8 @@ axs[1,2].plot(xx_exp, yy_g, '-', c='r', lw=1, zorder=10)
 axs[1,2].set_xlabel(r'$R$ [AU]', fontsize = 12)
 axs[1,2].set_ylim(-0.25, 0.25)
 axs[1,2].set_ylabel(r'$z$ [AU]', fontsize = 12)
-c0 = axs[1,2].contourf(x_xz_c, y_xz_c,m_p_xz, levels = logspace(-12, -1, 21), norm = LogNorm(), cmap = 'Purples', alpha = 1.0)
-ccomp0 = axs[1,2].contourf(x_xz_c, -y_xz_c, watercomp0, levels = linspace(0.3,0.7,21), cmap = 'Blues', alpha = 0.8, extend = 'both')
+c0 = axs[1,2].contourf(x_xz_c, y_xz_c,m_p_xz, levels = logspace(-12, -1, 21), norm = LogNorm(), cmap = 'Purples', alpha = 1.0, extend='both')
+ccomp0 = axs[1,2].contourf(x_xz_c, -y_xz_c, watercomp0, levels = linspace(0.1,0.7,21), cmap = 'Blues', alpha = 0.8, extend = 'both')
 #also plot the 1/2 line 
 axs[1,2].contour(x_xz_c, -y_xz_c, watercomp0, levels = [0.5], colors = 'k', linewidths = 2.0)
 
@@ -836,7 +948,7 @@ axs[1,0].set_xlabel(r'$R$ [AU]', fontsize = 12)
 axs[1,0].set_ylabel(r'$z$ [AU]', fontsize = 12)
 ax1 = axs[1,0].pcolormesh(x_xz,y_xz,tem_xz,norm = Normalize(vmin = 100,vmax = 600,clip = True) ,cmap = 'coolwarm', alpha = 1)
 C_Tem = axs[1,0].contour(x_xz_c,y_xz_c,tem_xz,levels = linspace(150,200,11,endpoint=True), cmap = 'Greys_r', alpha = 1.0, linewidths = 1.0)
-# C = axs[1,0].contour(x_xz_c,y_xz_c,tau_opt,levels = array([0.1,0.5,1.0,5.0]), colors = 'black', linestyles = 'dotted')
+C = axs[1,0].contour(x_xz_c,y_xz_c,tau_opt,levels = array([0.1,0.5,1.0,5.0]), colors = 'black', linestyles = 'dotted')
 # axs[1,0].contour(x_xz_c,y_xz_c,tau_ir,levels = array([0.1,0.5,1.0,5.0]), colors = 'orange', linestyles = 'dotted')
 # ax[1].annotate(r'$\tau_{R} = 0.1, 0.5, 1.0, 5.0$',xy = (2.0,0.14),xytext = (2.0,0.14),fontsize = 15)
 divider = make_axes_locatable(axs[1,0])
@@ -888,7 +1000,11 @@ axs[1,1].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10, label = r'$H_{\mathrm{1
 axs[1,1].set_ylabel(r'$z$ [AU]', fontsize = 12)
 # reconstruct the dust size distribution. 
 # The crude one: 
-pp= log10((dust_1_rho_xz+dust_2_rho_xz)/(dust_3_rho_xz + dust_4_rho_xz))/log10(m_p_xz/m_p1_xz)
+num_pp = dust_1_rho_xz + dust_2_rho_xz
+den_pp = dust_3_rho_xz + dust_4_rho_xz
+mass_ratio = where(m_p1_xz > 0.0, m_p_xz/m_p1_xz, nan)
+density_ratio = where(den_pp > 0.0, num_pp/den_pp, nan)
+pp= log10(density_ratio)/log10(mass_ratio)
 ax0 = axs[1,1].contourf(x_xz_c,y_xz_c,pp,levels = linspace(-8, 8, 31), cmap = 'coolwarm', alpha = 0.8)
 #label the 1/6 line 
 axs[1,1].contour(x_xz_c,y_xz_c, pp, levels = [1.0/6.0], colors = 'k', linewidths = 2.0)
@@ -913,15 +1029,21 @@ axs[0,1].set_title("time: {:.2f} yr".format(simu_time*UNIT_T/YR),loc= 'right', y
 axs[0,0].set_ylabel(r'$\Sigma$ [g/cm$^2$]', fontsize = 12)
 
 # axs[0,0].set_yscale('log')
-axs[0,0].set_ylim(1e-2, 100)
+axs[0,0].set_ylim(1e-2, 30)
 # sax[0].plot(xx_exp,(sigma_gas-sigma_vap)*0.4, color = 'k', alpha = 1.0, label = '$ f_{\mathrm{i/g}} \Sigma_{\mathrm{xy}}$')
 # shere the 0.4 is from the 0.8/2, in which 0.8 is the dust-to-gas flux ratio, so the vapor should be the half of it
 axs[0,0].plot(xx_exp,(sigma_gas)*0.4, color = 'k', linestyle='-', alpha = 1.0, label = 'gas')
 axs[0,0].plot(xx_exp,sqrt(2*pi)*0.4*(xx_exp/3)**(-1)*UNIT_SIGMA,color = 'grey',linewidth = 5, alpha = 0.5)
-axs[0,0].plot(xx_exp, sigma_ice0, c = colD['si'], lw = lwD['si'], label = 'ice 0')
-axs[0,0].plot(xx_exp, sigma_sil0, c = colD['ss'], lw = lwD['ss'], label = 'silicate 0')
-axs[0,0].plot(xx_exp, sigma_ice1, c = colD['li'], lw = lwD['li'], label = 'ice 1')
-axs[0,0].plot(xx_exp, sigma_sil1, c = colD['ls'], lw = lwD['ls'], label = 'silicate 1')
+ice_style = [('si', 'ice {}'), ('li', 'ice {}')]
+sil_style = [('ss', 'silicate {}'), ('ls', 'silicate {}')]
+for p in range(len(sigma_ice_by_pop)):
+    i_style = p if p < len(ice_style) else len(ice_style)-1
+    key = ice_style[i_style][0]
+    axs[0,0].plot(xx_exp, sigma_ice_by_pop[p], c = colD[key], lw = lwD[key], label = ice_style[i_style][1].format(p))
+for p in range(len(sigma_sil_by_pop)):
+    i_style = p if p < len(sil_style) else len(sil_style)-1
+    key = sil_style[i_style][0]
+    axs[0,0].plot(xx_exp, sigma_sil_by_pop[p], c = colD[key], lw = lwD[key], label = sil_style[i_style][1].format(p))
 axs[0,0].plot(xx_exp, sigma_vap , c = colD['va'], lw = lwD['va'], label = 'vapor') 
 axs[0,0].legend(handles=legend_handles, loc='upper right', ncol=3, frameon=False, fontsize=15)
 # density 
@@ -938,20 +1060,21 @@ crho1= axs[1,0].contourf(x_xz_c,y_xz_c,dust_3_rho_mod,levels = logspace(log10(d2
 ax0 =  axs[1,0].contourf(x_xz_c,-y_xz_c,dust_5_rho_mod,levels = logspace(log10(d2g_snow),log10(1.0),25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
 ax00 = axs[1,0].contourf(x_xz_c,-y_xz_c,dust_1_rho_mod,levels = logspace(log10(d2g_snow),log10(0.3),20), norm = LogNorm(), cmap = 'Blues', alpha = 1, extend = 'both', antialiased=True, zorder=4)
 
-# import pdb; pdb.set_trace()
+axs[1,0].contour(x_xz_c,y_xz_c,tau_ir,levels = array([0.5,1.0]), colors = 'black', linestyles = 'dotted', zorder = 20)
+axs[1,0].contour(x_xz_c,-y_xz_c,tau_ir,levels = array([0.5,1.0]), colors = 'black', linestyles = 'dotted', zorder = 20)
 axs[1,0].plot(xx_exp, -yy0, '--', c='k', lw=1, zorder=10)
 axs[1,0].plot(xx_exp, yy_g, '-', c='r', lw=1, zorder=10)
 # axs[1,0].plot(rad, H_profile(rad)/AU, '--', c='gray', lw=1, zorder=10)
 axs[1,0].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10)
 #zxl: 0his we change to the sum of the ice in different populations.
 ice_rho_xz_tot = dust_1_rho_xz + dust_3_rho_xz
-axs[1,0].contour(x_xz_c,y_xz_c, dust_3_rho_xz,levels = [d2g_snow], cmap = 'Blues_r', norm = LogNorm(), alpha = 0.7, linewidths = 3.0, zorder = 5)
-axs[1,0].contour(x_xz_c,-y_xz_c, dust_1_rho_xz,levels = [d2g_snow], cmap = 'Blues_r', alpha = 0.7, linewidths = 3.0, zorder = 4)
+axs[1,0].contour(x_xz_c,y_xz_c, dust_3_rho_xz/rho_xz,levels = [d2g_snow], cmap = 'Blues_r', norm = LogNorm(), alpha = 0.7, linewidths = 3.0, zorder = 5)
+axs[1,0].contour(x_xz_c,-y_xz_c, dust_1_rho_xz/rho_xz,levels = [d2g_snow], cmap = 'Blues_r', alpha = 0.7, linewidths = 3.0, zorder = 4)
 #label the panels in the lower left corner
 axs[1,0].text(0.05, 0.95, 'pop$_1$', transform=axs[1,0].transAxes, fontsize=18, va='top', ha='left')
 axs[1,0].text(0.05, 0.05, 'pop$_0$', transform=axs[1,0].transAxes, fontsize=18, va='bottom', ha='left')
 
-axs[1,0].streamplot(x1_exp_half,x3_exp, flx_x_xz/normal2, flx_z_xz/normal2,linewidth = lw_flx_gas, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='black',zorder=4)
+# axs[1,0].streamplot(x1_exp_half,x3_exp, flx_x_xz/normal2, flx_z_xz/normal2,linewidth = lw_flx_gas, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='black',zorder=4)
 axs[1,0].streamplot(x1_exp_half,x3_exp, ice1_flx_x_xz/normal2, ice1_flx_z_xz/normal2,linewidth = lw_flx_ice1, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='blue',zorder=4)
 # axs[1,0].streamplot(x1_exp_half,x3_exp, water_flx_x_xz/normal2, water_flx_z_xz/normal2,linewidth = lw_flx_water, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='pink',zorder=4)
 # axs[1,0].streamplot(x1_exp_half,z_neg, 
@@ -1012,7 +1135,7 @@ axs[0,1].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10)
 
 c1 = axs[0,1].contourf(x_xz_c, y_xz_c, m_p1_xz, levels = logspace(-17, 2, 31), norm = LogNorm(),cmap = 'Purples', alpha = 1.0,extend = 'both')
 axs[0,1].contour(x_xz_c, -y_xz_c, watercomp1, levels = [0.5], colors = 'k', linewidths = 2.0)
-axs[0,1].contourf(x_xz_c, -y_xz_c, watercomp1, levels = linspace(0.3,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
+axs[0,1].contourf(x_xz_c, -y_xz_c, watercomp1, levels = linspace(0.1,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
 cbar0 = fig.colorbar(c1, ax=axs[0,1], location = 'right', shrink = 0.8, pad = 0.04, anchor=(0,0))
 cbar0.ax.set_title(r'$m [g]$', fontsize = 12)
 
@@ -1028,7 +1151,7 @@ axs[1,1].set_xlabel(r'$R$ [AU]', fontsize = 12)
 axs[1,1].set_ylim(-0.25, 0.25)
 axs[1,1].set_ylabel(r'$z$ [AU]', fontsize = 12)
 c0 = axs[1,1].contourf(x_xz_c, y_xz_c,m_p_xz, levels = logspace(-12, -1, 21), norm = LogNorm(), cmap = 'Purples', alpha = 1.0,extend = 'both')
-ccomp0 = axs[1,1].contourf(x_xz_c, -y_xz_c, watercomp0, levels = linspace(0.3,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
+ccomp0 = axs[1,1].contourf(x_xz_c, -y_xz_c, watercomp0, levels = linspace(0.1,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
 #also plot the 1/2 line 
 axs[1,1].contour(x_xz_c, -y_xz_c, watercomp0, levels = [0.5], colors = 'k', linewidths = 2.0)
 
@@ -1374,18 +1497,22 @@ custom_lines2 = [Line2D([0], [10], color='tab:red', lw=3, linestyle='-',label='v
 ax[1].legend(handles=custom_lines2,handlelength = 2, loc = (0.74,0.6))
 
 # flux
+p2g_flux_inp = []
+for i in range(1, N_P*N_Z + 1): 
+    kk = 'p2g_flux_'+str(i)
+    p2g_flux_inp.append(athinputs['dust'][kk])
 
-ax[2].plot(xx_exp,flux_ice_face*1e8/-0.01,lw =3,color='tab:blue', alpha = 0.4, label = r'$\mathcal{F}_{\mathrm{ice}}$')
-ax[2].plot(xx_exp,flux_ice1_face*1e8/-0.2,lw =3,color='darkblue', alpha = 0.4, label = r'$\mathcal{F}_{\mathrm{ice, small}}$')
+ax[2].plot(xx_exp,flux_ice_face*1e8/-p2g_flux_inp[0],lw =3,color='tab:blue', alpha = 0.4, label = r'$\mathcal{F}_{\mathrm{ice}}$')
+ax[2].plot(xx_exp,flux_ice1_face*1e8-p2g_flux_inp[2],lw =3,color='darkblue', alpha = 0.4, label = r'$\mathcal{F}_{\mathrm{ice, small}}$')
 # ax[2].plot(xx_exp,flx_ice1_x*1e8,lw =5,color='skyblue', alpha = 0.8, label = r'$\mathcal{F}_{\mathrm{ice,small}}$')
 # ax[2].plot(xx_exp,flx_ice_x*1e8,lw =5,color='black', alpha = 0.4, label = r'$\mathcal{F}_{\mathrm{ice,big}}$')
-ax[2].plot(xx_exp,flux_sil_face*1e8/-0.01,'tab:orange', lw =1.0 , alpha = 1.0, linestyle = '-', label = r'$\mathcal{F}_{\mathrm{sil}}$')
-ax[2].plot(xx_exp,flux_sil1_face*1e8/-0.2,'lightblue', lw =1.0 , alpha = 1.0, linestyle = '-', label = r'$\mathcal{F}_{\mathrm{sil,small}}$')
+ax[2].plot(xx_exp,flux_sil_face*1e8/-p2g_flux_inp[1],'tab:orange', lw =1.0 , alpha = 1.0, linestyle = '-', label = r'$\mathcal{F}_{\mathrm{sil}}$')
+ax[2].plot(xx_exp,flux_sil1_face*1e8/-p2g_flux_inp[3],'lightblue', lw =1.0 , alpha = 1.0, linestyle = '-', label = r'$\mathcal{F}_{\mathrm{sil,small}}$')
 # ax[2].plot(xx_exp,flux_sil*1e8,
 # ax[2].plot(xx_exp,flux_sil1*1e8,'tab:blue', lw =2.0 , alpha = 1.0, linestyle = '-', label = r'$\mathcal{F}_{\mathrm{sil,small}}$')
 
-ax[2].plot(xx_exp,flux_vap_face*1e8/-0.21,lw =3,color='tab:red', alpha = 0.4, label = r'$\mathcal{F}_{\mathrm{vap}}$')
-ax[2].plot(xx_exp,flux_water_face*1e8/-0.21,lw =3,color='tab:purple', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
+ax[2].plot(xx_exp,flux_vap_face*1e8/-(p2g_flux_inp[0] + p2g_flux_inp[2]),lw =3,color='tab:red', alpha = 0.4, label = r'$\mathcal{F}_{\mathrm{vap}}$')
+ax[2].plot(xx_exp,flux_water_face*1e8/-(p2g_flux_inp[0] + p2g_flux_inp[2]),lw =3,color='tab:purple', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
 ax[2].plot(xx_exp,flux_gas_face*1e8/-1,lw =3,color='grey', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{xy}}$')
 
 # ax[2].plot(xx_exp, -xx_exp/xx_exp,'k--')
@@ -1397,12 +1524,12 @@ ax[2].axhline(0.0, c= 'k', ls='--')
 
 
 ax[2].set_xlim(rin/L_norm,rout/L_norm)
-ax[2].set_ylim(-12,12.0)
+ax[2].set_ylim(-3,5.0)
 ax[2].annotate(r'$\dot{M}_{\mathrm{acc}}$',xy=(1.0,-0.9),fontsize = 15)
 ax[2].annotate(r'$f_{\mathrm{i/g}} \dot{M}_{\mathrm{acc}}$',xy=(1.0,-0.25),fontsize = 15)
 ax[2].set_ylabel(r'Radial Mass Flux [$10^{-8}M_{\odot}$/yr]',fontsize = 15)
 
-ax[2].legend(loc='upper right')
+ax[2].legend(loc='upper right', fontsize = 10)
 for i in range(len(axes)):
     ax[i].set_xlim(rin/L_norm,rout/L_norm)
 for i in range(2):  
@@ -1420,7 +1547,7 @@ ax[1].axvline(xx_exp[51], ls='dotted', c= 'black', lw=1)
 plt.savefig('./plots/fig_snow_2d_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500) 
 plt.close()
 
-import pdb; pdb.set_trace()
+
 
 fig,axes = plt.subplots(nrows = 2, ncols = 1,figsize = (11,9))
 fig.set_facecolor('white')
