@@ -701,7 +701,7 @@ for j in range(len(zz_exp)):
         if(isnan(dust_4_dif_x[j,i])):
             dust_4_dif_x[j,i] = 0.0
 
-fig, ax = plt.subplots(figsize=(7, 5))
+fig, ax = plt.subplots(figsize=(10, 6))
 ax.set_ylim(0, 0.2)
 ax.set_xlim(rin/L_norm, 2)
 
@@ -709,24 +709,56 @@ crhov =  ax.contourf(x_xz_c,y_xz_c,dust_5_rho_xz*UNIT_DEN,levels = logspace(-20,
 crho1= ax.contourf(x_xz_c,y_xz_c,dust_3_rho_mod/rho_xz,levels = logspace(log10(d2g_snow), 0,15), norm = LogNorm(), cmap = 'Blues', alpha = 1.0, extend = 'both', antialiased = True,zorder=4)
 # ax0 =  ax.contourf(x_xz_c,-y_xz_c,dust_5_rho_mod,levels = logspace(log10(d2g_snow),log10(1.0),25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
 # ax00 = ax.contourf(x_xz_c,-y_xz_c,dust_1_rho_mod,levels = logspace(log10(d2g_snow),log10(0.3),20), norm = LogNorm(), cmap = 'Blues', alpha = 1, extend = 'both', antialiased=True, zorder=4)
-cbarv = fig.colorbar(crhov, ax = ax, orientation = 'vertical',pad = -0.15, shrink = 0.45, anchor=(0,1))
+cbarv = fig.colorbar(crhov, ax = ax, orientation = 'vertical',pad = -0.15, shrink = 0.3, aspect = 12, anchor=(0, 1))
 # cbarv.ax.set_title(r'$\rho_{vap}$ [g cm$^{-3}$]', fontsize = 12)
 cbarv.ax.set_ylabel(r'$\rho_{vap}$ [g cm$^{-3}$]', fontsize = 12)
 cbarv.set_ticks(logspace(-20,-10,6))
 cbarv.set_ticklabels([r'$10^{-20}$',r'$10^{-18}$',r'$10^{-16}$',r'$10^{-14}$',r'$10^{-12}$',r'$10^{-10}$'], fontsize = 10)
-cbar1 = fig.colorbar(crho1, ax = ax, orientation = 'vertical',pad = 0.02, shrink = 0.45, anchor=(0,0))
+cbar1 = fig.colorbar(crho1, ax = ax, orientation = 'vertical',pad = -0.15, shrink = 0.3, aspect = 12, anchor=(0, 0.5))
 cbar1.ax.set_ylabel(r'$\rho_{ice}/\rho_{gas}$', fontsize = 12)
 cbar1.set_ticks(logspace(log10(d2g_snow),0,4))
 cbar1.set_ticklabels([r'$10^{-3}$',r'$10^{-2}$',r'$10^{-1}$',r'$10^{0}$'], fontsize = 10)
 
+# overplot vapor colored by temperature region (contourf)
+vap_rho = dust_5_rho_xz * UNIT_DEN
 
+# mask vapor by temperature ranges
+vap_cold = ma.masked_where(~((tem_xz < 150) & (vap_rho > 0)), vap_rho)
+vap_warm = ma.masked_where(~((tem_xz >= 150) & (tem_xz < 400) & (vap_rho > 0)), vap_rho)
+vap_hot  = ma.masked_where(~((tem_xz >= 400) & (vap_rho > 0)), vap_rho)
+
+vap_cold_obs = ma.masked_where(~((tau_ir < 1.0) & (vap_cold > 0)), vap_cold)
+vap_warm_obs = ma.masked_where(~((tau_ir < 1.0) & (vap_warm > 0)), vap_warm)
+vap_hot_obs = ma.masked_where(~((tau_ir < 1.0) & (vap_hot > 0)), vap_hot)
+
+levels_vap = logspace(-20, -10, 10)
+ax.contourf(x_xz_c, y_xz_c, vap_cold_obs, levels=levels_vap, norm=LogNorm(), colors=['blue'],  alpha=0.5, zorder=6)
+ax.contourf(x_xz_c, y_xz_c, vap_warm_obs, levels=levels_vap, norm=LogNorm(), colors=['orange'], alpha=0.5, zorder=6)
+ax.contourf(x_xz_c, y_xz_c, vap_hot_obs,  levels=levels_vap, norm=LogNorm(), colors=['red'],   alpha=0.5, zorder=6)
+
+# legend for vapor temperature regions
+from matplotlib.patches import Patch
+legend_elements = [
+    Patch(facecolor='blue',  alpha=0.5, label=r'$T<150$ K'),
+    Patch(facecolor='orange', alpha=0.5, label=r'$150<T<400$ K'),
+    Patch(facecolor='red',   alpha=0.5, label=r'$T>400$ K'),
+]
+ax.legend(handles=legend_elements, loc='upper left', fontsize=10, framealpha=0.8)
+
+# overplot vapor only above tau_ir = 1 (optically thin region)
+# vap_above_tau = ma.masked_where(~((tau_ir < 1.0) & (vap_rho > 0)), vap_rho)
+# ax.contourf(x_xz_c, y_xz_c, vap_above_tau, levels=levels_vap, norm=LogNorm(),
+#             hatches=['//'], alpha=0.0, zorder=7)
 #over plot temperature profile
 ax.set_xlabel(r'$R$ [AU]', fontsize = 12)
 ax.set_ylabel(r'$z$ [AU]', fontsize = 12)
 # ax1 = ax.pcolormesh(x_xz,y_xz,tem_xz,norm = Normalize(vmin = 100,vmax = 600,clip = True) ,cmap = 'coolwarm', alpha = 1)
-C_Tem = ax.contour(x_xz_c,y_xz_c,tem_xz,levels = linspace(100,600,6,endpoint=True), cmap = 'coolwarm', alpha = 1.0, linewidths = 3.0, linstyles = 'dashed')
+C_Tem = ax.contour(x_xz_c,y_xz_c,tem_xz,levels = linspace(100,600,6,endpoint=True), cmap = 'coolwarm', alpha = 0.8, linewidths = 3.0, linestyles = 'dashed',zorder = 10)
+cbarT = fig.colorbar(C_Tem, ax = ax, orientation = 'vertical',pad = 0.02, shrink = 0.3, aspect = 12, anchor=(0, 0))
+cbarT.ax.set_ylabel(r'$T$ [K]', fontsize = 12)
+cbarT.set_ticklabels([r'$100$',r'$200$',r'$300$',r'$400$',r'$500$',r'$600$'], fontsize = 10)
 C = ax.contour(x_xz_c,y_xz_c,tau_ir,levels = array([1.0]), colors = 'purple', linestyles = 'dashed', linewidths = 3.0, zorder = 5)
-ax.annotate(r'$\tau_{ir}=1$', xy=(1.5, 0.15), xytext=(1.5, 0.05), fontsize = 20, color = 'red', zorder = 10, fontweight = 'bold',rotation = 20)
+ax.annotate(r'$\tau_{ir}=1$', xy=(1.5, 0.15), xytext=(1.5, 0.06), fontsize = 20, color = 'purple', zorder = 10, fontweight = 'bold',rotation = 20)
 
 fig.savefig('./plots/vap_obs_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500)
 
