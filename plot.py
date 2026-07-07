@@ -707,7 +707,7 @@ ax.set_xlim(rin/L_norm, 2)
 
 crhov =  ax.contourf(x_xz_c,y_xz_c,dust_5_rho_xz*UNIT_DEN,levels = logspace(-20,-10,10), norm = LogNorm(), cmap = 'Greys', alpha = 1.0, extend = 'both',zorder=3, antialiased = True)
 colors = ['white', 'lightblue', 'blue']
-crho1= ax.contourf(x_xz_c,y_xz_c,dust_3_rho_mod/rho_xz,levels = logspace(-2, 0,4), norm = LogNorm(), colors = colors, alpha = 0.7, extend = 'both', antialiased = True,zorder=4)
+crho1= ax.contourf(x_xz_c,y_xz_c,(dust_1_rho_mod + dust_3_rho_mod)/rho_xz,levels = logspace(-2, 0,4), norm = LogNorm(), colors = colors, alpha = 0.7, extend = 'both', antialiased = True,zorder=4)
 # ax0 =  ax.contourf(x_xz_c,-y_xz_c,dust_5_rho_mod,levels = logspace(log10(d2g_snow),log10(1.0),25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
 # ax00 = ax.contourf(x_xz_c,-y_xz_c,dust_1_rho_mod,levels = logspace(log10(d2g_snow),log10(0.3),20), norm = LogNorm(), cmap = 'Blues', alpha = 1, extend = 'both', antialiased=True, zorder=4)
 cbarv = fig.colorbar(crhov, ax = ax, orientation = 'vertical',pad = -0.15, shrink = 0.3, aspect = 12, anchor=(0, 1))
