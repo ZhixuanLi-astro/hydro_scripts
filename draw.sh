@@ -11,13 +11,13 @@ NUM_PROCESSES=40
 
 # Define the range of values
 START=0
-END=323
+END=1024
 
 # Function to run the plotting script
 run_plot() {
 	for ((i = $1; i <= $2; i++)); do
 		echo "Processing item $i"
-		python plot.py $i snowline_passive_relaxation &
+		python plot.py $i passive_test &
 		# Limit the number of background processes
 		if (($(jobs -r | wc -l) >= NUM_PROCESSES)); then
 			wait -n
