@@ -64,8 +64,7 @@ def calc_ini(rhoint, v_frag, Tem, alpha, rad, Mstar):
     Hd0 = dust_scale_height(St0, Hg, alpha)
     Hd1 = dust_scale_height(St1, Hg, alpha)
 
-    print ("m0, m1, St0, St1, Hd0, Hd1: ", m0, m1, St0, St1, Hd0, Hd1)
-    import pdb; pdb.set_trace()
+    print ("m0, m1, St0, St1, Hd0, Hd1: ", m0, m1, St0, St1, Hd0/Hg, Hd1/Hg)
     return m0, m1, St0, St1, Hd0, Hd1
 
 
