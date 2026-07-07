@@ -705,8 +705,9 @@ fig, ax = plt.subplots(figsize=(10, 6))
 ax.set_ylim(0, 0.2)
 ax.set_xlim(rin/L_norm, 2)
 
-crhov =  ax.contourf(x_xz_c,y_xz_c,dust_5_rho_xz*UNIT_DEN,levels = logspace(-20,-10,10), norm = LogNorm(), cmap = 'Greys', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
-crho1= ax.contourf(x_xz_c,y_xz_c,dust_3_rho_mod/rho_xz,levels = logspace(log10(d2g_snow), 0,15), norm = LogNorm(), cmap = 'Blues', alpha = 1.0, extend = 'both', antialiased = True,zorder=4)
+crhov =  ax.contourf(x_xz_c,y_xz_c,dust_5_rho_xz*UNIT_DEN,levels = logspace(-20,-10,10), norm = LogNorm(), cmap = 'Greys', alpha = 1.0, extend = 'both',zorder=3, antialiased = True)
+colors = ['white', 'lightblue', 'blue']
+crho1= ax.contourf(x_xz_c,y_xz_c,(dust_1_rho_mod + dust_3_rho_mod)/rho_xz,levels = logspace(-2, 0,4), norm = LogNorm(), colors = colors, alpha = 0.7, extend = 'both', antialiased = True,zorder=4)
 # ax0 =  ax.contourf(x_xz_c,-y_xz_c,dust_5_rho_mod,levels = logspace(log10(d2g_snow),log10(1.0),25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
 # ax00 = ax.contourf(x_xz_c,-y_xz_c,dust_1_rho_mod,levels = logspace(log10(d2g_snow),log10(0.3),20), norm = LogNorm(), cmap = 'Blues', alpha = 1, extend = 'both', antialiased=True, zorder=4)
 cbarv = fig.colorbar(crhov, ax = ax, orientation = 'vertical',pad = -0.15, shrink = 0.3, aspect = 12, anchor=(0, 1))
@@ -716,8 +717,8 @@ cbarv.set_ticks(logspace(-20,-10,6))
 cbarv.set_ticklabels([r'$10^{-20}$',r'$10^{-18}$',r'$10^{-16}$',r'$10^{-14}$',r'$10^{-12}$',r'$10^{-10}$'], fontsize = 10)
 cbar1 = fig.colorbar(crho1, ax = ax, orientation = 'vertical',pad = -0.15, shrink = 0.3, aspect = 12, anchor=(0, 0.5))
 cbar1.ax.set_ylabel(r'$\rho_{ice}/\rho_{gas}$', fontsize = 12)
-cbar1.set_ticks(logspace(log10(d2g_snow),0,4))
-cbar1.set_ticklabels([r'$10^{-3}$',r'$10^{-2}$',r'$10^{-1}$',r'$10^{0}$'], fontsize = 10)
+cbar1.set_ticks([1e-2, 1e-1, 1])
+cbar1.set_ticklabels([r'$10^{-2}$',r'$10^{-1}$',r'$10^{0}$'], fontsize = 10)
 
 # overplot vapor colored by temperature region (contourf)
 vap_rho = dust_5_rho_xz * UNIT_DEN
