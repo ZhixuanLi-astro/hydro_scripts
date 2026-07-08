@@ -1216,7 +1216,7 @@ axs[0,1].plot(xx_exp, -yy1, '--', c='k', lw=1, zorder=10)
 axs[0,1].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10)
 
 
-c1 = axs[0,1].contourf(x_xz_c, y_xz_c, m_p1_xz, levels = logspace(-17, 2, 31), norm = LogNorm(),cmap = 'Purples', alpha = 1.0,extend = 'both')
+c1 = axs[0,1].contourf(x_xz_c, y_xz_c, m_p1_xz, levels = logspace(-12, 1, 21), norm = LogNorm(),cmap = 'Purples', alpha = 1.0,extend = 'both')
 axs[0,1].contour(x_xz_c, -y_xz_c, watercomp1, levels = [0.5], colors = 'k', linewidths = 2.0)
 axs[0,1].contourf(x_xz_c, -y_xz_c, watercomp1, levels = linspace(0.1,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
 cbar0 = fig.colorbar(c1, ax=axs[0,1], location = 'right', shrink = 0.8, pad = 0.04, anchor=(0,0))
@@ -1233,7 +1233,7 @@ axs[1,1].plot(xx_exp, yy0, '--', c='k', lw=1, zorder=10)
 axs[1,1].set_xlabel(r'$R$ [AU]', fontsize = 12)
 axs[1,1].set_ylim(-0.25, 0.25)
 axs[1,1].set_ylabel(r'$z$ [AU]', fontsize = 12)
-c0 = axs[1,1].contourf(x_xz_c, y_xz_c,m_p_xz, levels = logspace(-12, -1, 21), norm = LogNorm(), cmap = 'Purples', alpha = 1.0,extend = 'both')
+c0 = axs[1,1].contourf(x_xz_c, y_xz_c,m_p_xz, levels = logspace(-12, 1, 21), norm = LogNorm(), cmap = 'Purples', alpha = 1.0,extend = 'both')
 ccomp0 = axs[1,1].contourf(x_xz_c, -y_xz_c, watercomp0, levels = linspace(0.1,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
 #also plot the 1/2 line 
 axs[1,1].contour(x_xz_c, -y_xz_c, watercomp0, levels = [0.5], colors = 'k', linewidths = 2.0)
@@ -1278,34 +1278,40 @@ zz_idx = (abs(theta - arccos(zz/rr))).argmin()
 #plot a time evolution of the fragmenation velocity and maximum peb mass 
 v_ice = 1000 
 v_sil = 100
-v_frag = zeros(120)
-time = zeros(120)
-for i in range(120):
-    filenum = i 
-    fileprim = DIR+'iceline.out1.'+str(filenum).rjust(5,'0')+'.athdf'
-    data_prim = athena_read.athdf(fileprim,face_func_2=face_f_2_power, num_ghost=0)
+v_frag = zeros(40)
+time = zeros(40)
+mmax = zeros(40)
+# for i in range(80,120):
+#     filenum = i 
+#     fileprim = DIR+'iceline.out1.'+str(filenum).rjust(5,'0')+'.athdf'
+#     data_prim = athena_read.athdf(fileprim,face_func_2=face_f_2_power, num_ghost=0)
 
-    # fileuov = DIR+'iceline.out2.'+str(filenum).rjust(5,'0')+'.athdf'
-    # data_uov = athena_read.athdf(fileuov,face_func_2=face_f_2_power, num_ghost=0)
+#     fileuov = DIR+'iceline.out2.'+str(filenum).rjust(5,'0')+'.athdf'
+#     data_uov = athena_read.athdf(fileuov,face_func_2=face_f_2_power, num_ghost=0)
 
-    dust_1_rho = data_prim['dust_1_rho'][0, zz_idx, rr_idx]
-    dust_3_rho = data_prim['dust_3_rho'][0, zz_idx, rr_idx]
-    dust_2_rho = data_prim['dust_2_rho'][0, zz_idx, rr_idx]
-    dust_4_rho = data_prim['dust_4_rho'][0, zz_idx, rr_idx]
+#     mmax[i-80] = data_uov['mmax'][0, zz_idx, rr_idx]
 
-    rho_sil = dust_2_rho + dust_4_rho
-    rho_ice = dust_1_rho + dust_3_rho 
+#     dust_1_rho = data_prim['dust_1_rho'][0, zz_idx, rr_idx]
+#     dust_3_rho = data_prim['dust_3_rho'][0, zz_idx, rr_idx]
+#     dust_2_rho = data_prim['dust_2_rho'][0, zz_idx, rr_idx]
+#     dust_4_rho = data_prim['dust_4_rho'][0, zz_idx, rr_idx]
 
-    v_frag[i] = (rho_sil*v_sil + rho_ice*v_ice)/(rho_sil + rho_ice)
-    time[i] = data_prim['Time']*UNIT_T/YR
+#     rho_sil = dust_2_rho + dust_4_rho
+#     rho_ice = dust_1_rho + dust_3_rho 
 
-fig, ax = plt.subplots(figsize=(8, 6))
-ax.plot(time, v_frag, color = 'k', lw = 2)
-ax.set_xlabel('time [yr]', fontsize = 12)
-ax.set_ylabel('v_frag [cm/s]', fontsize = 12)
-plt.savefig('./plots/vfrag_time.png', dpi = 300, bbox_inches='tight')
-plt.close()
-import pdb; pdb.set_trace()
+#     v_frag[i-80] = (rho_sil*v_sil + rho_ice*v_ice)/(rho_sil + rho_ice)
+#     time[i-80] = data_prim['Time']*UNIT_T/YR
+
+# fig, ax = plt.subplots(figsize=(8, 6))
+# ax.plot(time, v_frag, color = 'k', lw = 2)
+# axm = ax.twinx() 
+# axm.plot(time, mmax, color = 'r', lw = 2)
+# axm.set_yscale('log')
+# ax.set_xlabel('time [yr]', fontsize = 12)
+# ax.set_ylabel('v_frag [cm/s]', fontsize = 12)
+# plt.savefig('./plots/vfrag_time.png', dpi = 300, bbox_inches='tight')
+# plt.close()
+
     
 
 
@@ -1477,7 +1483,7 @@ ax.set_ylabel(r'$\rho$ (g/cm$^3$)')
 ax.legend(handles=legend_handles, frameon=True, fontsize=10)
 plt.tight_layout()
 plt.savefig('plots/2dinter_{:05d}.png'.format(int(filenum)), dpi=300)
-
+import pdb; pdb.set_trace()
 
 #==============================================================================
 #draw a vertical density distribution 
