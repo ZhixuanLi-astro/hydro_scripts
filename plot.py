@@ -1299,10 +1299,12 @@ for i in range(120):
     v_frag[i] = (rho_sil*v_sil + rho_ice*v_ice)/(rho_sil + rho_ice)
     time[i] = data_prim['Time']*UNIT_T/YR
 
-plt.plot(time, v_frag, color = 'k', lw = 2)
-plt.xlabel('time [yr]', fontsize = 12)
-plt.ylabel('v_frag [cm/s]', fontsize = 12)
+fig, ax = plt.subplots(figsize=(8, 6))
+ax.plot(time, v_frag, color = 'k', lw = 2)
+ax.set_xlabel('time [yr]', fontsize = 12)
+ax.set_ylabel('v_frag [cm/s]', fontsize = 12)
 plt.savefig('./plots/vfrag_time.png', dpi = 300, bbox_inches='tight')
+plt.close()
 import pdb; pdb.set_trace()
     
 
