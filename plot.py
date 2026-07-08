@@ -753,7 +753,7 @@ for i in range(len(rad)):
             m_hot_M[i,j]= dust_5_rho_xz[i,j]*rad[i]**2*sin(theta[j])*diff(rad_f)[i]*diff(theta_f)[j]*2*pi*UNIT_M  
             m_hot += m_hot_M[i,j]
 
-# find the vapor density threshold that encloses 90% of the mass in each temperature region
+# find the vapor density threshold that encloses 99% of the mass in each temperature region
 def _mass_threshold(mass_map, rho_map):
     cells = []
     total_mass = 0.0
@@ -762,6 +762,7 @@ def _mass_threshold(mass_map, rho_map):
             if mass_map[i,j] > 0 and rho_map[i,j] > 0:
                 cells.append((rho_map[i,j], mass_map[i,j]))
                 total_mass += mass_map[i,j]
+
     if total_mass == 0:
         return 0.0
     cells.sort(key=lambda x: x[0], reverse=True)
@@ -812,7 +813,6 @@ C = ax.contour(x_xz_c,y_xz_c,tau_ir,levels = array([1.0]), colors = 'purple', li
 ax.annotate(r'$\tau_{ir}=1$', xy=(1.5, 0.15), xytext=(1.5, 0.06), fontsize = 20, color = 'purple', zorder = 10, fontweight = 'bold',rotation = 20)
 
 fig.savefig('./plots/vap_obs_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500)
-import pdb; pdb.set_trace()
 
 fig, axs = plt.subplots(2, 1, figsize=(6, 6))
 m_p1_safe = where(m_p1[0].T > 0.0, m_p1[0].T, nan)
@@ -1185,11 +1185,11 @@ ice1_flx_adv_z_xz = ice1_flx_adv_z[:,0,:]
 lw_ice_adv = sqrt(ice_flx_adv_x_xz**2 + ice_flx_adv_z_xz**2)/normal2
 lw_ice1_adv = sqrt(ice1_flx_adv_x_xz**2 +ice1_flx_adv_z_xz**2)/normal2
 
-axs[1,0].streamplot(x1_exp_half,x3_exp, ice1_flx_adv_x_xz/normal2, ice1_flx_adv_z_xz/normal2,linewidth = lw_ice1_adv, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='green',zorder=4)
-axs[1,0].streamplot(x1_exp_half,z_neg, 
-                    ice_flx_adv_x_xz[::-1,:]/normal2, 
-                    ice_flx_adv_z_xz[::-1,:]/normal2,
-                    linewidth = lw_ice_adv[::-1,:], arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='green',zorder=4)
+# axs[1,0].streamplot(x1_exp_half,x3_exp, ice1_flx_adv_x_xz/normal2, ice1_flx_adv_z_xz/normal2,linewidth = lw_ice1_adv, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='green',zorder=4)
+# axs[1,0].streamplot(x1_exp_half,z_neg, 
+#                     ice_flx_adv_x_xz[::-1,:]/normal2, 
+#                     ice_flx_adv_z_xz[::-1,:]/normal2,
+#                     linewidth = lw_ice_adv[::-1,:], arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='green',zorder=4)
  
 # axs[1,0].axhline(y=0.8363558854159211*UNIT_L/AU , color='k', linestyle='-', linewidth=1, zorder=10)
 # axs[1,0].axvline(x=9.2467337671015173*UNIT_L/AU , color='k', linestyle='-', linewidth=1, zorder=10)
@@ -1198,7 +1198,7 @@ axs[1,0].streamplot(x1_exp_half,z_neg,
 # axs[1,0].axvline(x=9.2560270543284879*UNIT_L/AU , color='k', linestyle='-', linewidth=1, zorder=10)
 
 #move the colorbar to be aligned with the bottom of top figure 
-cbarrho = fig.colorbar(crho1, ax=axs[1,0],location = 'right', shrink = 0.45, pad =-0.095,anchor=(0,-0.))
+cbarrho = fig.colorbar(crho1, ax=axs[1,0],location = 'right', shrink = 0.45, pad =-0.085,anchor=(0,-0.))
 cbarrho.set_ticks([1e-2, 1e-1], labels = ['$10^{-2}$', '$10^{-1}$'])
 cbarrho.ax.set_title(r'$\rho_{\mathrm{ice}} [g/cm^3]$', fontsize = 12)
 cbarvap = fig.colorbar(ax0, ax=axs[1,0], location = 'right', shrink = 0.45, pad =0.04, anchor=(0,1))
@@ -1214,6 +1214,7 @@ axs[0,1].set_ylim(-0.25, 0.25)
 # axs[1,2].plot(rad, -H_profile(rad)/AU, '--', c='gray', lw=1)
 axs[0,1].plot(xx_exp, -yy1, '--', c='k', lw=1, zorder=10)
 axs[0,1].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10)
+
 
 c1 = axs[0,1].contourf(x_xz_c, y_xz_c, m_p1_xz, levels = logspace(-17, 2, 31), norm = LogNorm(),cmap = 'Purples', alpha = 1.0,extend = 'both')
 axs[0,1].contour(x_xz_c, -y_xz_c, watercomp1, levels = [0.5], colors = 'k', linewidths = 2.0)
@@ -1267,6 +1268,42 @@ cbarcomp0.ax.hlines(0.5, 0,1, color='k', linewidth=2)  # Mark the 0.5 line on th
 # axs[0,0].legend(handles=legend_handles_panel1, loc='upper right', frameon=True, fontsize=12)
 
 plt.savefig('./plots/2ddust_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
+import pdb; pdb.set_trace()
+
+rr = 2.75
+zz = 0.18 
+rr_idx = (abs(rad - rr)).argmin()
+zz_idx = (abs(theta - arccos(zz/rr))).argmin()
+
+#plot a time evolution of the fragmenation velocity and maximum peb mass 
+v_ice = 1000 
+v_sil = 100
+v_frag = zeros(120)
+time = zeros(120)
+for i in range(120):
+    filenum = i 
+    fileprim = DIR+'iceline.out1.'+str(filenum).rjust(5,'0')+'.athdf'
+    data_prim = athena_read.athdf(fileprim,face_func_2=face_f_2_power, num_ghost=0)
+
+    fileuov = DIR+'iceline.out2.'+str(filenum).rjust(5,'0')+'.athdf'
+    data_uov = athena_read.athdf(fileuov,face_func_2=face_f_2_power, num_ghost=0)
+
+    dust_1_rho = data_uov['dust_1_rho'][0, zz_idx, rr_idx]
+    dust_3_rho = data_uov['dust_3_rho'][0, zz_idx, rr_idx]
+    dust_2_rho = data_uov['dust_2_rho'][0, zz_idx, rr_idx]
+    dust_4_rho = data_uov['dust_4_rho'][0, zz_idx, rr_idx]
+
+    rho_sil = dust_2_rho + dust_4_rho
+    rho_ice = dust_1_rho + dust_3_rho 
+
+    v_frag[i] = (rho_sil*v_sil + rho_ice*v_ice)/(rho_sil + rho_ice)
+    time[i] = data_prim['time']*UNIT_T/YR
+
+plt.plot(time, v_frag, color = 'k', lw = 2)
+plt.xlabel('time [yr]', fontsize = 12)
+plt.ylabel('v_frag [cm/s]', fontsize = 12)
+plt.savefig('./plots/vfrag_time.png', dpi = 300, bbox_inches='tight')
+    
 
 
 #==============================================================================
