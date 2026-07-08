@@ -1288,10 +1288,10 @@ for i in range(120):
     fileuov = DIR+'iceline.out2.'+str(filenum).rjust(5,'0')+'.athdf'
     data_uov = athena_read.athdf(fileuov,face_func_2=face_f_2_power, num_ghost=0)
 
-    dust_1_rho = data_uov['dust_1_rho'][0, zz_idx, rr_idx]
-    dust_3_rho = data_uov['dust_3_rho'][0, zz_idx, rr_idx]
-    dust_2_rho = data_uov['dust_2_rho'][0, zz_idx, rr_idx]
-    dust_4_rho = data_uov['dust_4_rho'][0, zz_idx, rr_idx]
+    dust_1_rho = data_prim['dust_1_rho'][0, zz_idx, rr_idx]
+    dust_3_rho = data_prim['dust_3_rho'][0, zz_idx, rr_idx]
+    dust_2_rho = data_prim['dust_2_rho'][0, zz_idx, rr_idx]
+    dust_4_rho = data_prim['dust_4_rho'][0, zz_idx, rr_idx]
 
     rho_sil = dust_2_rho + dust_4_rho
     rho_ice = dust_1_rho + dust_3_rho 
