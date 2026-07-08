@@ -10,8 +10,8 @@
 NUM_PROCESSES=40
 
 # Define the range of values
-START=80
-END=1139
+START=1139
+END=1146
 
 # Function to run the plotting script
 run_plot() {
