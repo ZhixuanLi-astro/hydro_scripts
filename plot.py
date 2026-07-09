@@ -1173,10 +1173,10 @@ legends = [Line2D([0], [0], color='k', lw=2, marker = '>', label=r'$10^{-3}~\rho
            Line2D([0], [0], color='k', ls = '--', lw=1, label=r'$H_{peb}$')]
 axs[1,0].legend(handles=legends, loc='upper right',fontsize = 15, framealpha = 0.6)
 # the vapor
-ax0 =  axs[1,0].contourf(x_xz_c,y_xz_c,dust_5_rho_mod,levels = logspace(log10(d2g_snow),log10(1.0),25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
-crho1= axs[1,0].contourf(x_xz_c,y_xz_c,dust_3_rho_mod,levels = logspace(log10(d2g_snow),log10(0.3),20), norm = LogNorm(), cmap = 'Blues', alpha = 1.0, extend = 'both', antialiased = True,zorder=4)
-ax0 =  axs[1,0].contourf(x_xz_c,-y_xz_c,dust_5_rho_mod,levels = logspace(log10(d2g_snow),log10(1.0),25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
-ax00 = axs[1,0].contourf(x_xz_c,-y_xz_c,dust_1_rho_mod,levels = logspace(log10(d2g_snow),log10(0.3),20), norm = LogNorm(), cmap = 'Blues', alpha = 1, extend = 'both', antialiased=True, zorder=4)
+ax0 =  axs[1,0].contourf(x_xz_c,y_xz_c,dust_5_rho_mod*UNIT_DEN,levels = logspace(-13, -11,25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
+axs[1,0].contourf(x_xz_c,-y_xz_c,dust_5_rho_mod*UNIT_DEN,levels = logspace(-13, -11,25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
+crho1= axs[1,0].contourf(x_xz_c,y_xz_c,dust_3_rho_mod*UNIT_DEN,levels = logspace(-13, -11,20), norm = LogNorm(), cmap = 'Blues', alpha = 1.0, extend = 'both', antialiased = True,zorder=4)
+ax00 = axs[1,0].contourf(x_xz_c,-y_xz_c,dust_1_rho_mod*UNIT_DEN,levels = logspace(-13,-11,20), norm = LogNorm(), cmap = 'Blues', alpha = 1, extend = 'both', antialiased=True, zorder=4)
 
 axs[1,0].contour(x_xz_c,y_xz_c,tau_ir,levels = array([0.5,1.0]), colors = 'black', linestyles = 'dotted', zorder = 20)
 axs[1,0].contour(x_xz_c,-y_xz_c,tau_ir,levels = array([0.5,1.0]), colors = 'black', linestyles = 'dotted', zorder = 20)
@@ -1235,10 +1235,10 @@ lw_ice1_adv = sqrt(ice1_flx_adv_x_xz**2 +ice1_flx_adv_z_xz**2)/normal2
 
 #move the colorbar to be aligned with the bottom of top figure 
 cbarrho = fig.colorbar(crho1, ax=axs[1,0],location = 'right', shrink = 0.45, pad =-0.085,anchor=(0,-0.))
-cbarrho.set_ticks([1e-2, 1e-1], labels = ['$10^{-2}$', '$10^{-1}$'])
+cbarrho.set_ticks([1e-13, 1e-12], labels = ['$10^{-2}$', '$10^{-1}$'])
 cbarrho.ax.set_title(r'$\rho_{\mathrm{ice}} [g/cm^3]$', fontsize = 12)
 cbarvap = fig.colorbar(ax0, ax=axs[1,0], location = 'right', shrink = 0.45, pad =0.04, anchor=(0,1))
-cbarvap.set_ticks([1e-2, 1e-1, 1.0], labels = ['$10^{-2}$', '$10^{-1}$', '$10^{0}$'])
+cbarvap.set_ticks([1e-13, 1e-12, 1e-11], labels = ['$10^{-2}$', '$10^{-1}$', '$10^{0}$'])
 cbarvap.ax.set_title(r'$\rho_{\mathrm{vap}} [g/cm^3]$', fontsize = 12)
 
 # mass and water comp
@@ -1254,7 +1254,7 @@ axs[0,1].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10)
 
 c1 = axs[0,1].contourf(x_xz_c, y_xz_c, m_p1_xz, levels = logspace(-17, 2, 31), norm = LogNorm(),cmap = 'Purples', alpha = 1.0,extend = 'both')
 axs[0,1].contour(x_xz_c, -y_xz_c, watercomp1, levels = [0.5], colors = 'k', linewidths = 2.0)
-axs[0,1].contourf(x_xz_c, -y_xz_c, watercomp1, levels = linspace(0.1,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
+axs[0,1].contourf(x_xz_c, -y_xz_c, watercomp1, levels = linspace(0.3,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
 cbar0 = fig.colorbar(c1, ax=axs[0,1], location = 'right', shrink = 0.8, pad = 0.04, anchor=(0,0))
 cbar0.ax.set_title(r'$m [g]$', fontsize = 12)
 
@@ -1270,7 +1270,7 @@ axs[1,1].set_xlabel(r'$R$ [AU]', fontsize = 12)
 axs[1,1].set_ylim(-0.25, 0.25)
 axs[1,1].set_ylabel(r'$z$ [AU]', fontsize = 12)
 c0 = axs[1,1].contourf(x_xz_c, y_xz_c,m_p_xz, levels = logspace(-12, -1, 21), norm = LogNorm(), cmap = 'Purples', alpha = 1.0,extend = 'both')
-ccomp0 = axs[1,1].contourf(x_xz_c, -y_xz_c, watercomp0, levels = linspace(0.1,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
+ccomp0 = axs[1,1].contourf(x_xz_c, -y_xz_c, watercomp0, levels = linspace(0.3,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
 #also plot the 1/2 line 
 axs[1,1].contour(x_xz_c, -y_xz_c, watercomp0, levels = [0.5], colors = 'k', linewidths = 2.0)
 
@@ -1603,7 +1603,7 @@ ax00 = ax[1]
 ax00.plot(rad, ((dust_1_rho_xz + dust_2_rho_xz + dust_3_rho_xz + dust_4_rho_xz)/rho_xz)[:,-1], 'k', lw = 3.0,label = '$d/g$')
 # ax00.plot(xx_exp, (sigma_ice+sigma_sil)/sigma_gas, 'k', lw = 3.0,label = '$d/g$')
 ax00.plot(rad, (dust_5_rho_xz/rho_xz)[:,-1],'tab:red', linestyle = '-', lw = 3.0)
-ax00.set_ylim(0,1.0)
+ax00.set_ylim(0,3.0)
 
 
 # # ax00.vlines(r_snow, -0.01, 1.2, linestyle = '--', color = 'grey')

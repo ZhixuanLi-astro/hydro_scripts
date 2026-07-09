@@ -10,14 +10,14 @@
 NUM_PROCESSES=40
 
 # Define the range of values
-START=1139
-END=1146
+START=900
+END=3357
 
 # Function to run the plotting script
 run_plot() {
 	for ((i = $1; i <= $2; i++)); do
 		echo "Processing item $i"
-		python plot.py $i passive_test &
+		python plot.py $i 2d_np &
 		# Limit the number of background processes
 		if (($(jobs -r | wc -l) >= NUM_PROCESSES)); then
 			wait -n
