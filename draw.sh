@@ -10,7 +10,7 @@
 NUM_PROCESSES=40
 
 # Define the range of values
-START=900
+START=2300
 END=3357
 
 # Function to run the plotting script
