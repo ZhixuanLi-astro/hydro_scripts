@@ -566,15 +566,6 @@ normal = sort(sqrt(vx_xz**2 + vz_xz**2),axis = None)[-10]# velocity normalizatio
 normal2 = sort(sqrt(water_flx_x_xz**2 + water_flx_z_xz**2),axis = None)[-2]
 # normal2 = sort(sqrt(ice_flx_x_xz**2 + ice_flx_z_xz**2),axis = None)[-2]
 
-# calc optical depth
-kappa0 = athinputs['problem']['kappa0']
-f_vi = athinputs['problem']['f_vi']
-tau_opt = zeros(rho_xz.shape)
-for j in range(tau_opt.shape[1]):
-    dx2 = rad*L_norm*(theta_f[1]-theta_f[0])
-    tau_opt[:,j] += tau_opt[:,j-1] + rho_xz[:,j]*Get_kappa(kappa0, 0.0, dust_5_rho_xz/rho_xz)[:,j] * dx2
-
-tau_ir = tau_opt/3
 
 dif = (x/3.0)*0.003
 dif_intpl = (xx_exp_mesh/3.0)*0.003
@@ -679,6 +670,25 @@ Hp0_idx, yy0 = find_dust_scaleheight([dust_1_rho_intpl, dust_2_rho_intpl], y_xz_
 Hp1_idx, yy1 = find_dust_scaleheight([dust_3_rho_intpl, dust_4_rho_intpl], y_xz_c)
 Hpg_idx, yy_g = find_dust_scaleheight([[], rho_intpl], y_xz_c)
 
+# calc optical depth
+kappa0 = athinputs['problem']['kappa0']
+f_vi = athinputs['problem']['f_vi']
+tau_opt = zeros(rho_xz.shape)
+for j in range(tau_opt.shape[1]):
+    dx2 = rad*L_norm*(theta_f[1]-theta_f[0])
+    tau_opt[:,j] += tau_opt[:,j-1] + rho_xz[:,j]*Get_kappa(kappa0, 0.0, dust_5_rho_xz/rho_xz)[:,j] * dx2
+
+#problemic
+tau_opt_intpl = zeros(rho_intpl.shape)
+for j in range(-1, -1-tau_opt_intpl.shape[1], -1):
+    dx2 = dz 
+    kappatem = Get_kappa(kappa0, 0.0, dust_5_rho_intpl/rho_intpl)[:,j]
+    kappatem[isnan(kappatem)] = 0.0
+    tau_opt_intpl[:,j] += tau_opt_intpl[:,j+1] + rho_intpl[:,j]*kappatem * dx2
+
+tau_ir = tau_opt/5
+tau_ir_intpl = tau_opt_intpl/3
+
 for j in range(len(zz_exp)):
     rho_safe = where(rho_intpl[j,:] > 0.0, rho_intpl[j,:], 1.0)
     d2g_2 = where(rho_intpl[j,:] > 0.0, dust_2_rho_intpl[j,:]/rho_safe, 0.0)
@@ -701,101 +711,6 @@ for j in range(len(zz_exp)):
         if(isnan(dust_4_dif_x[j,i])):
             dust_4_dif_x[j,i] = 0.0
 
-fig, ax = plt.subplots(figsize=(10, 6))
-ax.set_ylim(0, 0.2)
-ax.set_xlim(rin/L_norm, 2)
-
-crhov =  ax.contourf(x_xz_c,y_xz_c,dust_5_rho_xz*UNIT_DEN,levels = logspace(-20,-10,10), norm = LogNorm(), cmap = 'Greys', alpha = 1.0, extend = 'both',zorder=3, antialiased = True)
-colors = ['white', 'lightblue', 'blue']
-crho1= ax.contourf(x_xz_c,y_xz_c,(dust_1_rho_mod + dust_3_rho_mod)/rho_xz,levels = logspace(-2, 0,4), norm = LogNorm(), antialiased = True, 
-                   colors = colors, alpha = 0.7, extend = 'both',zorder=4)
-# ax0 =  ax.contourf(x_xz_c,-y_xz_c,dust_5_rho_mod,levels = logspace(log10(d2g_snow),log10(1.0),25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
-# ax00 = ax.contourf(x_xz_c,-y_xz_c,dust_1_rho_mod,levels = logspace(log10(d2g_snow),log10(0.3),20), norm = LogNorm(), cmap = 'Blues', alpha = 1, extend = 'both', antialiased=True, zorder=4)
-cbarv = fig.colorbar(crhov, ax = ax, orientation = 'vertical',pad = -0.15, shrink = 0.3, aspect = 12, anchor=(0, 1))
-# cbarv.ax.set_title(r'$\rho_{vap}$ [g cm$^{-3}$]', fontsize = 12)
-cbarv.ax.set_ylabel(r'$\rho_{vap}$ [g cm$^{-3}$]', fontsize = 12)
-cbarv.set_ticks(logspace(-20,-10,6))
-cbarv.set_ticklabels([r'$10^{-20}$',r'$10^{-18}$',r'$10^{-16}$',r'$10^{-14}$',r'$10^{-12}$',r'$10^{-10}$'], fontsize = 10)
-cbar1 = fig.colorbar(crho1, ax = ax, orientation = 'vertical',pad = -0.15, shrink = 0.3, aspect = 12, anchor=(0, 0.5))
-cbar1.ax.set_ylabel(r'$\rho_{ice}/\rho_{gas}$', fontsize = 12)
-cbar1.set_ticks([1e-2, 1e-1, 1])
-cbar1.set_ticklabels([r'$10^{-2}$',r'$10^{-1}$',r'$10^{0}$'], fontsize = 10)
-
-# overplot vapor colored by temperature region (contourf)
-vap_rho = dust_5_rho_xz * UNIT_DEN
-
-# mask vapor by temperature ranges
-vap_cold = ma.masked_where(~((tem_xz < 150) & (vap_rho > 0)), vap_rho)
-vap_warm = ma.masked_where(~((tem_xz >= 150) & (tem_xz < 400) & (vap_rho > 0)), vap_rho)
-vap_hot  = ma.masked_where(~((tem_xz >= 400) & (vap_rho > 0)), vap_rho)
-
-vap_cold_obs = ma.masked_where(~((tau_ir < 1.0) & (vap_cold > 0)), vap_cold)
-vap_warm_obs = ma.masked_where(~((tau_ir < 1.0) & (vap_warm > 0)), vap_warm)
-vap_hot_obs = ma.masked_where(~((tau_ir < 1.0) & (vap_hot > 0)), vap_hot)
-
-# integrate to get the mass of hot/warm/cold vapor in the optically thin region
-m_cold = 0 
-m_warm = 0 
-m_hot  = 0
-m_cold_M = zeros_like(dust_5_rho_xz)
-m_warm_M = zeros_like(dust_5_rho_xz)
-m_hot_M = zeros_like(dust_5_rho_xz)
-
-for i in range(len(rad)):
-    for j in range(len(theta)):
-        if(tem_xz[i,j] < 150 and tau_ir[i,j] < 1.0):
-            m_cold_M[i,j] = dust_5_rho_xz[i,j]*rad[i]**2*sin(theta[j])*diff(rad_f)[i]*diff(theta_f)[j]*2*pi*UNIT_M
-            m_cold += m_cold_M[i,j] 
-        elif(tem_xz[i,j] >= 150 and tem_xz[i,j] < 400 and tau_ir[i,j] < 1.0):
-            m_warm_M[i,j] = dust_5_rho_xz[i,j]*rad[i]**2*sin(theta[j])*diff(rad_f)[i]*diff(theta_f)[j]*2*pi*UNIT_M 
-            m_warm += m_warm_M[i,j]
-        elif(tem_xz[i,j] >= 400 and tau_ir[i,j] < 1.0):
-            m_hot_M[i,j]= dust_5_rho_xz[i,j]*rad[i]**2*sin(theta[j])*diff(rad_f)[i]*diff(theta_f)[j]*2*pi*UNIT_M  
-            m_hot += m_hot_M[i,j]
-
-# find the vapor density threshold that encloses 99% of the mass in each temperature region
-def _mass_threshold(mass_map, rho_map):
-    cells = []
-    total_mass = 0.0
-    for i in range(len(rad)):
-        for j in range(len(theta)):
-            if mass_map[i,j] > 0 and rho_map[i,j] > 0:
-                cells.append((rho_map[i,j], mass_map[i,j]))
-                total_mass += mass_map[i,j]
-
-    if total_mass == 0:
-        return 0.0
-    cells.sort(key=lambda x: x[0], reverse=True)
-    cum = 0.0
-    target = 0.99 * total_mass
-    for density, mass in cells:
-        cum += mass
-        if cum >= target:
-            return density
-    return cells[-1][0]
-
-threshold_cold = _mass_threshold(m_cold_M, vap_rho)
-threshold_warm = _mass_threshold(m_warm_M, vap_rho)
-threshold_hot  = _mass_threshold(m_hot_M,  vap_rho)
-
-# mask vapor to only the densest cells accounting for 90% of each region's mass
-vap_cold_90 = ma.masked_where(~((tau_ir < 1.0) & (vap_cold > 0) & (vap_rho >= threshold_cold)), vap_rho)
-vap_warm_90 = ma.masked_where(~((tau_ir < 1.0) & (vap_warm > 0) & (vap_rho >= threshold_warm)), vap_rho)
-vap_hot_90  = ma.masked_where(~((tau_ir < 1.0) & (vap_hot > 0) & (vap_rho >= threshold_hot)), vap_rho)
-
-levels_vap = logspace(-20, -10, 10)
-ax.contourf(x_xz_c, y_xz_c, vap_cold_90, levels=levels_vap, norm=LogNorm(), colors=['blue'],  alpha=0.5, zorder=6)
-ax.contourf(x_xz_c, y_xz_c, vap_warm_90, levels=levels_vap, norm=LogNorm(), colors=['orange'],alpha=0.5, zorder=6)
-ax.contourf(x_xz_c, y_xz_c, vap_hot_90,  levels=levels_vap, norm=LogNorm(), colors=['red'],   alpha=0.5, zorder=6)
-
-# legend for vapor temperature regions
-from matplotlib.patches import Patch
-legend_elements = [
-    Patch(facecolor='blue',  alpha=0.3, label=r'$T<150$ K'),
-    Patch(facecolor='orange', alpha=0.3, label=r'$150<T<400$ K'),
-    Patch(facecolor='red',   alpha=0.3, label=r'$T>400$ K'),
-]
-ax.legend(handles=legend_elements, loc='upper left', fontsize=10, framealpha=0.8)
 
 rr = 2.55
 zz = 0.17 
@@ -832,6 +747,127 @@ zz_idx = (abs(theta - arccos(zz/rr))).argmin()
 # ax.set_ylabel('v_frag [cm/s]', fontsize = 12)
 # plt.savefig('./plots/vfrag_time.png', dpi = 300, bbox_inches='tight')
 # plt.close()
+
+fig, ax = plt.subplots(figsize=(10, 7))
+ax.set_ylim(-0.35, 0.35)
+ax.set_xlim(rin/L_norm, 3)
+
+crhov =  ax.contourf(x_xz_c,y_xz_c,dust_5_rho_xz*UNIT_DEN,levels = logspace(-19,-9,10), norm = LogNorm(), cmap = 'Greys', alpha = 1.0, extend = 'both',zorder=3, antialiased = True)
+ax.contourf(x_xz_c,-y_xz_c,dust_5_rho_xz*UNIT_DEN,levels = logspace(-19,-9,10), norm = LogNorm(), cmap = 'Greys', alpha = 1.0, extend = 'both',zorder=3, antialiased = True)
+colors = ['white', 'skyblue', 'deepskyblue', 'dodgerblue', 'blue', 'darkblue']
+crho1= ax.contourf(x_xz_c,y_xz_c,(dust_1_rho_mod)/rho_xz,levels = logspace(log10(0.05), log10(1.25),5), norm = LogNorm(), antialiased = True, 
+                   colors = colors, alpha = 0.7, extend = 'both',zorder=4)
+crho1= ax.contourf(x_xz_c,-y_xz_c,(dust_3_rho_mod)/rho_xz,levels = logspace(log10(0.05), log10(1.25),5), norm = LogNorm(), antialiased = True, 
+                   colors = colors, alpha = 0.7, extend = 'both',zorder=4)
+# ax0 =  ax.contourf(x_xz_c,-y_xz_c,dust_5_rho_mod,levels = logspace(log10(d2g_snow),log10(1.0),25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
+# ax00 = ax.contourf(x_xz_c,-y_xz_c,dust_1_rho_mod,levels = logspace(log10(d2g_snow),log10(0.3),20), norm = LogNorm(), cmap = 'Blues', alpha = 1, extend = 'both', antialiased=True, zorder=4)
+cbarv = fig.colorbar(crhov, ax = ax, orientation = 'vertical',pad = -0.15, shrink = 0.3, aspect = 12, anchor=(0, 1))
+# cbarv.ax.set_title(r'$\rho_{vap}$ [g cm$^{-3}$]', fontsize = 12)
+cbarv.ax.set_ylabel(r'$\rho_{vap}$ [g cm$^{-3}$]', fontsize = 12)
+cbarv.set_ticks(logspace(-20,-10,6))
+cbarv.set_ticklabels([r'$10^{-20}$',r'$10^{-18}$',r'$10^{-16}$',r'$10^{-14}$',r'$10^{-12}$',r'$10^{-10}$'], fontsize = 10)
+cbar1 = fig.colorbar(crho1, ax = ax, orientation = 'vertical',pad = -0.15, shrink = 0.3, aspect = 12, anchor=(0, 0.5))
+cbar1.ax.set_ylabel(r'$\rho_{ice}/\rho_{gas}$', fontsize = 12)
+cbar1.set_ticks([0.1, 0.3, 1])
+cbar1.set_ticklabels(['0.1', '0.3', '1'], fontsize = 10)
+
+# overplot vapor colored by temperature region (contourf)
+vap_rho = dust_5_rho_xz * UNIT_DEN
+
+# mask vapor by temperature ranges
+vap_cold = ma.masked_where(~((tem_xz< 150) & (vap_rho > 0)), vap_rho)
+vap_warm = ma.masked_where(~((tem_xz>= 150) & (tem_xz < 400) & (vap_rho > 0)), vap_rho)
+vap_hot  = ma.masked_where(~((tem_xz>= 400) & (vap_rho > 0)), vap_rho)
+
+vap_cold_obs = ma.masked_where(~((tau_ir < 1.0) & (vap_cold > 0)), vap_cold)
+vap_warm_obs = ma.masked_where(~((tau_ir < 1.0) & (vap_warm > 0)), vap_warm)
+vap_hot_obs = ma.masked_where(~(( tau_ir < 1.0) & (vap_hot > 0)), vap_hot)
+
+# integrate to get the mass of hot/warm/cold vapor in the optically thin region
+m_cold = 0 
+m_warm = 0 
+m_hot  = 0
+m_cold_M = zeros_like(dust_5_rho_xz)
+m_warm_M = zeros_like(dust_5_rho_xz)
+m_hot_M = zeros_like( dust_5_rho_xz)
+
+for i in range(len(rad)):
+    for j in range(len(theta)):
+        if(tem_xz[i,j] < 150 and tau_ir[i,j] < 1.0):
+            m_cold_M[i,j] = dust_5_rho_xz[i,j]*rad[i]**2*sin(theta[j])*diff(rad_f)[i]*diff(theta_f)[j]*2*pi*UNIT_M
+            m_cold += m_cold_M[i,j] 
+        elif(tem_xz[i,j] >= 150 and tem_xz[i,j] < 400 and tau_ir[i,j] < 1.0):
+            m_warm_M[i,j] = dust_5_rho_xz[i,j]*rad[i]**2*sin(theta[j])*diff(rad_f)[i]*diff(theta_f)[j]*2*pi*UNIT_M 
+            m_warm += m_warm_M[i,j]
+        elif(tem_xz[i,j] >= 400 and tau_ir[i,j] < 1.0):
+            m_hot_M[i,j]= dust_5_rho_xz[i,j]*rad[i]**2*sin(theta[j])*diff(rad_f)[i]*diff(theta_f)[j]*2*pi*UNIT_M  
+            m_hot += m_hot_M[i,j]
+
+# m_cold = 0 
+# m_warm = 0 
+# m_hot  = 0
+# m_cold_M = zeros_like(dust_5_rho_intpl)
+# m_warm_M = zeros_like(dust_5_rho_intpl)
+# m_hot_M = zeros_like( dust_5_rho_intpl)
+# dx = (xx_exp[1]-xx_exp[0])
+# for j in range(len(xx_exp)):
+#     for i in range(len(zz_exp)):
+#         if(Tem_intpl[i,j] < 150 and tau_ir_intpl[i,j] < 1.0):
+#             m_cold_M[i,j] = dust_5_rho_intpl[i,j]*dz*dx*AU**2*UNIT_DEN
+#             m_cold += m_cold_M[i,j] 
+#         elif(Tem_intpl[i,j] >= 150 and Tem_intpl[i,j] < 400 and tau_ir_intpl[i,j] < 1.0):
+#             m_warm_M[i,j] = dust_5_rho_intpl[i,j]*dx*dz*AU**2*UNIT_DEN
+#             m_warm += m_warm_M[i,j]
+#         elif(Tem_intpl[i,j] >= 400 and tau_ir_intpl[i,j] < 1.0):
+#             m_hot_M[i,j]= dust_5_rho_intpl[i,j]*dx*dz*AU**2*UNIT_DEN  
+#             m_hot += m_hot_M[i,j]
+# find the vapor density threshold that encloses 99% of the mass in each temperature region
+def _mass_threshold(mass_map, rho_map, thres=0.99):
+    cells = []
+    total_mass = 0.0
+    for i in range(len(rad)):
+        for j in range(len(theta)):
+            if mass_map[i,j] > 0 and rho_map[i,j] > 0:
+                cells.append((rho_map[i,j], mass_map[i,j]))
+                total_mass += mass_map[i,j]
+
+    if total_mass == 0:
+        return 0.0
+    cells.sort(key=lambda x: x[0], reverse=True)
+    cum = 0.0
+    target = thres * total_mass
+    for density, mass in cells:
+        cum += mass
+        if cum >= target:
+            return density
+    return cells[-1][0]
+
+threshold_cold = _mass_threshold(m_cold_M, vap_rho)
+threshold_warm = _mass_threshold(m_warm_M, vap_rho)
+threshold_hot  = _mass_threshold(m_hot_M,  vap_rho, thres = 1.0)
+
+# mask vapor to only the densest cells accounting for 90% of each region's mass
+vap_cold_90 = ma.masked_where(~((tau_ir < 1.0) & (vap_cold > 0) & (vap_rho >= threshold_cold)), vap_rho)
+vap_warm_90 = ma.masked_where(~((tau_ir < 1.0) & (vap_warm > 0) & (vap_rho >= threshold_warm)), vap_rho)
+vap_hot_90  = ma.masked_where(~((tau_ir < 1.0) & (vap_hot > 0) & (vap_rho >= threshold_hot)), vap_rho)
+
+levels_vap = logspace(-20, -8, 10)
+ax.contourf(x_xz_c, y_xz_c, vap_cold_90, levels=levels_vap, norm=LogNorm(), colors=['blue'],  alpha=0.5, zorder=6,antialiased = True)
+ax.contourf(x_xz_c, y_xz_c, vap_warm_90, levels=levels_vap, norm=LogNorm(), colors=['orange'],alpha=0.5, zorder=6,antialiased = True)
+ax.contourf(x_xz_c, y_xz_c, vap_hot_90,  levels=levels_vap, norm=LogNorm(), colors=['red'],   alpha=0.5, zorder=6,antialiased = True)
+
+ax.contourf(x_xz_c, -y_xz_c, vap_cold_90, levels=levels_vap, norm=LogNorm(), colors=['blue'],  alpha=0.5, zorder=6,antialiased = True)
+ax.contourf(x_xz_c, -y_xz_c, vap_warm_90, levels=levels_vap, norm=LogNorm(), colors=['orange'],alpha=0.5, zorder=6,antialiased = True)
+ax.contourf(x_xz_c, -y_xz_c, vap_hot_90,  levels=levels_vap, norm=LogNorm(), colors=['red'],   alpha=0.5, zorder=6,antialiased = True)
+
+# legend for vapor temperature regions
+from matplotlib.patches import Patch
+legend_elements = [
+    Patch(facecolor='blue',  alpha=0.5, label=r'$T<150$ K'),
+    Patch(facecolor='orange',alpha=0.5, label=r'$150<T<400$ K'),
+    Patch(facecolor='red',   alpha=0.5, label=r'$T>400$ K'),
+]
+ax.legend(handles=legend_elements, loc='upper left', fontsize=10, framealpha=0.8)
 # overplot vapor only above tau_ir = 1 (optically thin region)
 # vap_above_tau = ma.masked_where(~((tau_ir < 1.0) & (vap_rho > 0)), vap_rho)
 # ax.contourf(x_xz_c, y_xz_c, vap_above_tau, levels=levels_vap, norm=LogNorm(),
@@ -840,12 +876,17 @@ zz_idx = (abs(theta - arccos(zz/rr))).argmin()
 ax.set_xlabel(r'$R$ [AU]', fontsize = 12)
 ax.set_ylabel(r'$z$ [AU]', fontsize = 12)
 # ax1 = ax.pcolormesh(x_xz,y_xz,tem_xz,norm = Normalize(vmin = 100,vmax = 600,clip = True) ,cmap = 'coolwarm', alpha = 1)
-C_Tem = ax.contour(x_xz_c,y_xz_c,tem_xz,levels = linspace(100,600,6,endpoint=True), cmap = 'coolwarm', alpha = 0.8, linewidths = 3.0, linestyles = 'dashed',zorder = 10)
+C_Tem = ax.contour(x_xz_c,y_xz_c,tem_xz,levels = linspace(100,400,5,endpoint=True), cmap = 'coolwarm', alpha = 0.8, linewidths = 1.5, linestyles = 'dashed',zorder = 11)
+ax.contour(x_xz_c,-y_xz_c,tem_xz,levels = linspace(100,400,5,endpoint=True),        cmap = 'coolwarm', alpha = 0.8, linewidths = 1.5, linestyles = 'dashed',zorder = 11)
+
+ax.contour(x_xz_c,y_xz_c,tem_xz,levels = linspace(100,400,5,endpoint=True), colors='white', alpha = 0.8, linewidths = 2.8,zorder = 10)
+ax.contour(x_xz_c,-y_xz_c,tem_xz,levels = linspace(100,400,5,endpoint=True), colors='white', alpha = 0.8, linewidths = 2.8,zorder = 10)
 cbarT = fig.colorbar(C_Tem, ax = ax, orientation = 'vertical',pad = 0.02, shrink = 0.3, aspect = 12, anchor=(0, 0))
 cbarT.ax.set_ylabel(r'$T$ [K]', fontsize = 12)
-cbarT.set_ticklabels([r'$100$',r'$200$',r'$300$',r'$400$',r'$500$',r'$600$'], fontsize = 10)
+# cbarT.set_ticklabels([r'$100$',r'$200$',r'$300$',r'$400$',r'$500$',r'$600$'], fontsize = 10)
 C = ax.contour(x_xz_c,y_xz_c,tau_ir,levels = array([1.0]), colors = 'purple', linestyles = 'dashed', linewidths = 3.0, zorder = 5)
-ax.annotate(r'$\tau_{ir}=1$', xy=(1.5, 0.15), xytext=(1.5, 0.06), fontsize = 20, color = 'purple', zorder = 10, fontweight = 'bold',rotation = 20)
+# C = ax.contour(xx_exp_mesh, zz_exp_mesh,tau_ir_intpl,levels = array([0.1, 1.0, 2, 100]), colors = 'purple', linestyles = 'dashed', linewidths = 3.0, zorder = 5)
+ax.annotate(r'$\tau_{ir}=1$', xy=(2.5, 0.25), xytext=(2.5, 0.25), fontsize = 20, color = 'purple', zorder = 10, fontweight = 'bold',rotation = 20)
 
 fig.savefig('./plots/vap_obs_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500)
 
@@ -1175,8 +1216,9 @@ axs[1,0].legend(handles=legends, loc='upper right',fontsize = 15, framealpha = 0
 # the vapor
 ax0 =  axs[1,0].contourf(x_xz_c,y_xz_c,dust_5_rho_mod*UNIT_DEN,levels = logspace(-13, -11,25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
 axs[1,0].contourf(x_xz_c,-y_xz_c,dust_5_rho_mod*UNIT_DEN,levels = logspace(-13, -11,25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
-crho1= axs[1,0].contourf(x_xz_c,y_xz_c,dust_3_rho_mod*UNIT_DEN,levels = logspace(-13, -11,20), norm = LogNorm(), cmap = 'Blues', alpha = 1.0, extend = 'both', antialiased = True,zorder=4)
-ax00 = axs[1,0].contourf(x_xz_c,-y_xz_c,dust_1_rho_mod*UNIT_DEN,levels = logspace(-13,-11,20), norm = LogNorm(), cmap = 'Blues', alpha = 1, extend = 'both', antialiased=True, zorder=4)
+
+crho1= axs[1,0].contourf(x_xz_c,y_xz_c,dust_3_rho_mod*UNIT_DEN,levels = logspace(-13, log10(3e-11),20), norm = LogNorm(), cmap = 'Blues', alpha = 1.0, extend = 'both', antialiased = True,zorder=4)
+axs[1,0].contourf(x_xz_c,-y_xz_c,dust_1_rho_mod*UNIT_DEN,levels = logspace(-13,log10(3e-11),20), norm = LogNorm(), cmap = 'Blues', alpha = 1, extend = 'both', antialiased=True, zorder=4)
 
 axs[1,0].contour(x_xz_c,y_xz_c,tau_ir,levels = array([0.5,1.0]), colors = 'black', linestyles = 'dotted', zorder = 20)
 axs[1,0].contour(x_xz_c,-y_xz_c,tau_ir,levels = array([0.5,1.0]), colors = 'black', linestyles = 'dotted', zorder = 20)
@@ -1235,10 +1277,10 @@ lw_ice1_adv = sqrt(ice1_flx_adv_x_xz**2 +ice1_flx_adv_z_xz**2)/normal2
 
 #move the colorbar to be aligned with the bottom of top figure 
 cbarrho = fig.colorbar(crho1, ax=axs[1,0],location = 'right', shrink = 0.45, pad =-0.085,anchor=(0,-0.))
-cbarrho.set_ticks([1e-13, 1e-12], labels = ['$10^{-2}$', '$10^{-1}$'])
+cbarrho.set_ticks([1e-13, 1e-12,1e-11], labels = ['$10^{-13}$', '$10^{-12}$', '$10^{-11}$'])
 cbarrho.ax.set_title(r'$\rho_{\mathrm{ice}} [g/cm^3]$', fontsize = 12)
 cbarvap = fig.colorbar(ax0, ax=axs[1,0], location = 'right', shrink = 0.45, pad =0.04, anchor=(0,1))
-cbarvap.set_ticks([1e-13, 1e-12, 1e-11], labels = ['$10^{-2}$', '$10^{-1}$', '$10^{0}$'])
+cbarvap.set_ticks([1e-13, 1e-12, 1e-11], labels = ['$10^{-13}$', '$10^{-12}$', '$10^{-11}$'])
 cbarvap.ax.set_title(r'$\rho_{\mathrm{vap}} [g/cm^3]$', fontsize = 12)
 
 # mass and water comp
@@ -1254,7 +1296,7 @@ axs[0,1].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10)
 
 c1 = axs[0,1].contourf(x_xz_c, y_xz_c, m_p1_xz, levels = logspace(-17, 2, 31), norm = LogNorm(),cmap = 'Purples', alpha = 1.0,extend = 'both')
 axs[0,1].contour(x_xz_c, -y_xz_c, watercomp1, levels = [0.5], colors = 'k', linewidths = 2.0)
-axs[0,1].contourf(x_xz_c, -y_xz_c, watercomp1, levels = linspace(0.3,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
+axs[0,1].contourf(x_xz_c, -y_xz_c, watercomp1, levels = linspace(0.4,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
 cbar0 = fig.colorbar(c1, ax=axs[0,1], location = 'right', shrink = 0.8, pad = 0.04, anchor=(0,0))
 cbar0.ax.set_title(r'$m [g]$', fontsize = 12)
 
@@ -1270,7 +1312,7 @@ axs[1,1].set_xlabel(r'$R$ [AU]', fontsize = 12)
 axs[1,1].set_ylim(-0.25, 0.25)
 axs[1,1].set_ylabel(r'$z$ [AU]', fontsize = 12)
 c0 = axs[1,1].contourf(x_xz_c, y_xz_c,m_p_xz, levels = logspace(-12, -1, 21), norm = LogNorm(), cmap = 'Purples', alpha = 1.0,extend = 'both')
-ccomp0 = axs[1,1].contourf(x_xz_c, -y_xz_c, watercomp0, levels = linspace(0.3,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
+ccomp0 = axs[1,1].contourf(x_xz_c, -y_xz_c, watercomp0, levels = linspace(0.4,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
 #also plot the 1/2 line 
 axs[1,1].contour(x_xz_c, -y_xz_c, watercomp0, levels = [0.5], colors = 'k', linewidths = 2.0)
 
@@ -1279,7 +1321,7 @@ axs[1,1].text(0.05, 0.05, 'pop$_0$', transform=axs[1,1].transAxes, fontsize=18, 
 
 cbarcomp0 = fig.colorbar(ccomp0, ax=axs[1,1], location='right', shrink=0.8, pad=0.04, anchor=(0,1))
 cbarcomp0.ax.set_title(r'$f_{\mathrm{H_2 O}}$', fontsize = 12)
-cbarcomp0.set_ticks([0.3, 0.5, 0.7], labels = ['0.3', '0.5', '0.7'])
+cbarcomp0.set_ticks([0.4, 0.5, 0.7], labels = ['0.4', '0.5', '0.7'])
 cbarcomp0.ax.hlines(0.5, 0,1, color='k', linewidth=2)  # Mark the 0.5 line on the colorbar
 
 # axs[1,0].set_ylim(0, 0.25)
@@ -1306,7 +1348,6 @@ cbarcomp0.ax.hlines(0.5, 0,1, color='k', linewidth=2)  # Mark the 0.5 line on th
 plt.savefig('./plots/2ddust_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
 plt.close()
 
-import pdb; pdb.set_trace()
     
 
 
