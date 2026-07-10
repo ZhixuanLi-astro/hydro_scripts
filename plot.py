@@ -1681,13 +1681,13 @@ ax[2].plot(xx_exp,flux_sil1_face*1e8,lw =lwD['ls'],color=colD['ls'], alpha = alp
 # ax[2].plot(xx_exp,flux_sil*1e8,
 # ax[2].plot(xx_exp,flux_sil1*1e8,'tab:blue', lw =2.0 , alpha = 1.0, linestyle = '-', label = r'$\mathcal{F}_{\mathrm{sil,small}}$')
 
+ax[2].axhline(-0.1, c= 'k', ls='--')
 ax[2].plot(xx_exp,flux_vap_face*1e8,  lw =lwD['va'],color=colD['va'], alpha = alpD['va'], label = r'$\mathcal{F}_{\mathrm{vap}}$')
 ax[2].plot(xx_exp,flux_water_face*1e8,lw =3,color='lightblue', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
 ax[2].plot(xx_exp,flux_gas_face*1e8,lw =3,color='grey', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{xy}}$')
 
 # ax[2].plot(xx_exp, -xx_exp/xx_exp,'k--')
 # ax[2].plot(xx_exp, -xx_exp/xx_exp*0.4,'k--')
-ax[2].axhline(1., c= 'k', ls='--')
 ax[2].axhline(0.0, c= 'k', ls='--')
 # ax[2].axhline(-0.4, c= 'k', ls='--')
 
