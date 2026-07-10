@@ -515,8 +515,8 @@ dust_3_vx_xz = dust_3_vx[:,0,:]
 dust_3_vy_xz = dust_3_vy[:,0,:]
 dust_3_vz_xz = dust_3_vz[:,0,:]
 
-flx_water_x1 = flx_ice1_x1 + flx_ice_x1 + flx_vap_x1 
-flx_water_x2 = flx_ice1_x2 + flx_ice_x2 + flx_vap_x2
+flx_water_x1 = flx_vap_x1 
+flx_water_x2 = flx_vap_x2
 
 flx_x, flx_y, flx_z = v_Intpl_Sph2car(rad,theta,phi,x1_exp_half,slice_exp,x3_exp,flx_x1.T, flx_x2.T, flx_x1.T * 0.0)
 flx_x_xz = flx_x[:,0,:]
@@ -686,7 +686,7 @@ for j in range(-1, -1-tau_opt_intpl.shape[1], -1):
     kappatem[isnan(kappatem)] = 0.0
     tau_opt_intpl[:,j] += tau_opt_intpl[:,j+1] + rho_intpl[:,j]*kappatem * dx2
 
-tau_ir = tau_opt/5
+tau_ir = tau_opt/3
 tau_ir_intpl = tau_opt_intpl/3
 
 for j in range(len(zz_exp)):
@@ -911,8 +911,8 @@ cbarmmax.ax.set_title('$m_{max}$')
 # plt.savefig('./plots/mmax_{:05d}.png'.format(int(filenum)) ,dpi=300)
 plt.close()
 
-colD = {'ga':'black', 'ss':'tab:orange', 'ms':'tab:orange', 'ls':'tab:orange', 'si':'tab:blue', 'mi':"tab:blue" ,'li':'tab:cyan', 'va':'tab:purple'}
-lwD  = {'ga':2, 'ss':1, 'ms':3, 'ls':4, 'si':2, 'mi':3, 'li':5, 'va':2}  
+colD = {'ga':'black', 'ss':'tab:orange', 'ms':'tab:orange', 'ls':'tab:orange', 'si':'tab:blue', 'mi':"tab:blue" ,'li':'tab:blue', 'va':'tab:purple'}
+lwD  = {'ga':2, 'ss':1, 'ms':3, 'ls':4, 'si':1, 'mi':3, 'li':4, 'va':2}  
 alpD = {'ga':1.0, 'ss':1., 'ms': 0.8, 'ls':0.5, 'si':1., 'mi':0.8, 'li':0.5, 'va':1.}
 
 legend_handles = [
@@ -1188,7 +1188,7 @@ axs[0,1].set_title("time: {:.2f} yr".format(simu_time*UNIT_T/YR),loc= 'right', y
 axs[0,0].set_ylabel(r'$\Sigma$ [g/cm$^2$]', fontsize = 12)
 
 # axs[0,0].set_yscale('log')
-axs[0,0].set_ylim(1e-2, 30)
+axs[0,0].set_ylim(1e-2, 50)
 # sax[0].plot(xx_exp,(sigma_gas-sigma_vap)*0.4, color = 'k', alpha = 1.0, label = '$ f_{\mathrm{i/g}} \Sigma_{\mathrm{xy}}$')
 # shere the 0.4 is from the 0.8/2, in which 0.8 is the dust-to-gas flux ratio, so the vapor should be the half of it
 axs[0,0].plot(xx_exp,(sigma_gas)*0.4, color = 'k', linestyle='-', alpha = 1.0, label = 'gas')
@@ -1236,11 +1236,11 @@ axs[1,0].text(0.05, 0.05, 'pop$_0$', transform=axs[1,0].transAxes, fontsize=18, 
 
 # axs[1,0].streamplot(x1_exp_half,x3_exp, flx_x_xz/normal2, flx_z_xz/normal2,linewidth = lw_flx_gas, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='black',zorder=4)
 axs[1,0].streamplot(x1_exp_half,x3_exp, ice1_flx_x_xz/normal2, ice1_flx_z_xz/normal2,linewidth = lw_flx_ice1, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='blue',zorder=4)
-# axs[1,0].streamplot(x1_exp_half,x3_exp, water_flx_x_xz/normal2, water_flx_z_xz/normal2,linewidth = lw_flx_water, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='pink',zorder=4)
-# axs[1,0].streamplot(x1_exp_half,z_neg, 
-#                     water_flx_x_xz[::-1,:]/normal2, 
-#                     - water_flx_z_xz[::-1,:]/normal2,
-#                     linewidth = lw_flx_water[::-1,:], arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='pink',zorder=4)
+axs[1,0].streamplot(x1_exp_half,x3_exp, water_flx_x_xz/normal2, water_flx_z_xz/normal2,linewidth = lw_flx_water, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='pink',zorder=4)
+axs[1,0].streamplot(x1_exp_half,z_neg, 
+                    water_flx_x_xz[::-1,:]/normal2, 
+                    - water_flx_z_xz[::-1,:]/normal2,
+                    linewidth = lw_flx_water[::-1,:], arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='pink',zorder=4)
 axs[1,0].streamplot(x1_exp_half,z_neg, 
                     ice_flx_x_xz[::-1,:]/normal2, 
                     - ice_flx_z_xz[::-1,:]/normal2,linewidth = lw_flx_ice[::-1,:], arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='blue',zorder=4)
@@ -1642,10 +1642,11 @@ ax[0].set_ylabel(r'$\Sigma$ [g~cm$^{-2}$]')
 # d2g
 # ax00 = ax[0].twinx()
 ax00 = ax[1]
+ax00.set_yscale('log')
 ax00.plot(rad, ((dust_1_rho_xz + dust_2_rho_xz + dust_3_rho_xz + dust_4_rho_xz)/rho_xz)[:,-1], 'k', lw = 3.0,label = '$d/g$')
 # ax00.plot(xx_exp, (sigma_ice+sigma_sil)/sigma_gas, 'k', lw = 3.0,label = '$d/g$')
 ax00.plot(rad, (dust_5_rho_xz/rho_xz)[:,-1],'tab:red', linestyle = '-', lw = 3.0)
-ax00.set_ylim(0,3.0)
+ax00.set_ylim(1e-3,1.0)
 
 
 # # ax00.vlines(r_snow, -0.01, 1.2, linestyle = '--', color = 'grey')
@@ -1668,18 +1669,21 @@ for i in range(1, N_P*N_Z + 1):
     kk = 'p2g_flux_'+str(i)
     p2g_flux_inp.append(athinputs['dust'][kk])
 
-ax[2].plot(xx_exp,flux_ice_face*1e8/-p2g_flux_inp[0],lw =3,color='tab:blue', alpha = 0.4, label = r'$\mathcal{F}_{\mathrm{ice}}$')
-ax[2].plot(xx_exp,flux_ice1_face*1e8-p2g_flux_inp[2],lw =3,color='darkblue', alpha = 0.4, label = r'$\mathcal{F}_{\mathrm{ice, small}}$')
+ax[2].set_yscale('symlog', linthresh = 1e-2)
+ax[2].plot(xx_exp,flux_ice_face*1e8, lw =lwD['si'],color='darkblue', alpha = alpD['si'], label = r'$\mathcal{F}_{\mathrm{ice, small}}$')
+ax[2].plot(xx_exp,flux_ice1_face*1e8,lw =lwD['li'],color='darkblue', alpha = alpD['li'], label = r'$\mathcal{F}_{\mathrm{ice, big}}$')
+# ax[2].plot(xx_exp,(flux_ice_face + flux_ice1_face)*1e8,lw =lwD['li'],color='blue', alpha = 1, label = r'$\mathcal{F}_{\mathrm{ice}}$')
 # ax[2].plot(xx_exp,flx_ice1_x*1e8,lw =5,color='skyblue', alpha = 0.8, label = r'$\mathcal{F}_{\mathrm{ice,small}}$')
 # ax[2].plot(xx_exp,flx_ice_x*1e8,lw =5,color='black', alpha = 0.4, label = r'$\mathcal{F}_{\mathrm{ice,big}}$')
-ax[2].plot(xx_exp,flux_sil_face*1e8/-p2g_flux_inp[1],'tab:orange', lw =1.0 , alpha = 1.0, linestyle = '-', label = r'$\mathcal{F}_{\mathrm{sil}}$')
-ax[2].plot(xx_exp,flux_sil1_face*1e8/-p2g_flux_inp[3],'lightblue', lw =1.0 , alpha = 1.0, linestyle = '-', label = r'$\mathcal{F}_{\mathrm{sil,small}}$')
+ax[2].plot(xx_exp,flux_sil_face*1e8, lw =lwD['ss'],color=colD['ss'], alpha = alpD['ss'], label = r'$\mathcal{F}_{\mathrm{sil, small}}$')
+ax[2].plot(xx_exp,flux_sil1_face*1e8,lw =lwD['ls'],color=colD['ls'], alpha = alpD['ls'], label = r'$\mathcal{F}_{\mathrm{sil, big}}$')
+# ax[2].plot(xx_exp,(flux_sil1_face + flux_sil_face)*1e8,lw =lwD['ls'],color='orange', alpha = 1, label = r'$\mathcal{F}_{\mathrm{sil}}$')
 # ax[2].plot(xx_exp,flux_sil*1e8,
 # ax[2].plot(xx_exp,flux_sil1*1e8,'tab:blue', lw =2.0 , alpha = 1.0, linestyle = '-', label = r'$\mathcal{F}_{\mathrm{sil,small}}$')
 
-ax[2].plot(xx_exp,flux_vap_face*1e8/-(p2g_flux_inp[0] + p2g_flux_inp[2]),lw =3,color='tab:red', alpha = 0.4, label = r'$\mathcal{F}_{\mathrm{vap}}$')
-ax[2].plot(xx_exp,flux_water_face*1e8/-(p2g_flux_inp[0] + p2g_flux_inp[2]),lw =3,color='tab:purple', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
-ax[2].plot(xx_exp,flux_gas_face*1e8/-1,lw =3,color='grey', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{xy}}$')
+ax[2].plot(xx_exp,flux_vap_face*1e8,  lw =lwD['va'],color=colD['va'], alpha = alpD['va'], label = r'$\mathcal{F}_{\mathrm{vap}}$')
+ax[2].plot(xx_exp,flux_water_face*1e8,lw =3,color='lightblue', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
+ax[2].plot(xx_exp,flux_gas_face*1e8,lw =3,color='grey', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{xy}}$')
 
 # ax[2].plot(xx_exp, -xx_exp/xx_exp,'k--')
 # ax[2].plot(xx_exp, -xx_exp/xx_exp*0.4,'k--')
