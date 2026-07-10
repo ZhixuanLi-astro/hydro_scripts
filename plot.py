@@ -888,7 +888,7 @@ C = ax.contour(x_xz_c,y_xz_c,tau_ir,levels = array([1.0]), colors = 'purple', li
 # C = ax.contour(xx_exp_mesh, zz_exp_mesh,tau_ir_intpl,levels = array([0.1, 1.0, 2, 100]), colors = 'purple', linestyles = 'dashed', linewidths = 3.0, zorder = 5)
 ax.annotate(r'$\tau_{ir}=1$', xy=(2.5, 0.25), xytext=(2.5, 0.25), fontsize = 20, color = 'purple', zorder = 10, fontweight = 'bold',rotation = 20)
 
-fig.savefig('./plots/vap_obs_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500)
+# fig.savefig('./plots/vap_obs_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500)
 
 fig, axs = plt.subplots(2, 1, figsize=(6, 6))
 m_p1_safe = where(m_p1[0].T > 0.0, m_p1[0].T, nan)
@@ -908,7 +908,7 @@ cbarmmax = fig.colorbar(bbar, format=ticker.FuncFormatter(formatnum), ax = axs[1
 cbarmmax.set_ticks([1e-5, 1e-4, 1e-3, 1e-2, 1e-1])
 cbarmmax.ax.set_title('$m_{max}$')
 
-plt.savefig('./plots/mmax_{:05d}.png'.format(int(filenum)) ,dpi=300)
+# plt.savefig('./plots/mmax_{:05d}.png'.format(int(filenum)) ,dpi=300)
 plt.close()
 
 colD = {'ga':'black', 'ss':'tab:orange', 'ms':'tab:orange', 'ls':'tab:orange', 'si':'tab:blue', 'mi':"tab:blue" ,'li':'tab:cyan', 'va':'tab:purple'}
@@ -1177,7 +1177,7 @@ axs[1,1].legend(frameon=False, loc='upper left', fontsize=12)
 axs[0,0].legend(handles=legend_handles_panel1, loc='upper right', frameon=True, fontsize=12)
 fig.legend(handles=legend_handles, loc='upper left', ncol=3, frameon=False, fontsize=15, bbox_to_anchor=(0.05,1.00))
 # plt.tight_layout()
-plt.savefig('./plots/2dprop_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
+# plt.savefig('./plots/2dprop_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
 plt.close()
 
 #==============================================================================
@@ -1347,6 +1347,7 @@ cbarcomp0.ax.hlines(0.5, 0,1, color='k', linewidth=2)  # Mark the 0.5 line on th
 
 plt.savefig('./plots/2ddust_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
 plt.close()
+import pdb; pdb.set_trace()
 
     
 
