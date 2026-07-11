@@ -717,6 +717,11 @@ zz = 0.17
 rr_idx = (abs(rad - rr)).argmin()
 zz_idx = (abs(theta - arccos(zz/rr))).argmin()
 
+singlepop = False
+singlepop = sys.argv[2] == 'single_pop'
+
+
+
 #plot a time evolution of the fragmenation velocity and maximum peb mass 
 # v_ice = 1000 
 # v_sil = 100
@@ -1177,8 +1182,170 @@ axs[1,1].legend(frameon=False, loc='upper left', fontsize=12)
 axs[0,0].legend(handles=legend_handles_panel1, loc='upper right', frameon=True, fontsize=12)
 fig.legend(handles=legend_handles, loc='upper left', ncol=3, frameon=False, fontsize=15, bbox_to_anchor=(0.05,1.00))
 # plt.tight_layout()
-# plt.savefig('./plots/2dprop_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
+# if not singlepop:
+    plt.savefig('./plots/2dprop_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
 plt.close()
+
+
+if singlepop: 
+    fig, [ax, axm] = plt.subplots(1, 2, figsize=(18, 6))
+    ticks = logspace(-12, -1, 5)
+    ax.set_ylabel(r'$z$ [AU]', fontsize = 12)
+    ax.set_ylim(0., 0.25)
+    ax.set_xlim(rin/L_norm, rout/L_norm)
+    legends = [Line2D([0], [0], color='k', lw=2, marker = '>', label=r'$10^{-3}~\rho_{0}c_{\mathrm{s,0}}$'),
+               Line2D([0], [0], color='k', ls = '--', lw=1, label=r'$H_{peb}$'), 
+               Line2D([0], [0], color='gray', ls = '-.', lw=1, label=r'$H_{\mathrm{gas}}$')]
+    ax.legend(handles=legends, loc='upper right',fontsize = 12, framealpha = 0.6)
+# the vapor
+    ax0 =  ax.contourf(x_xz_c,y_xz_c,dust_3_rho_mod*UNIT_DEN,levels = logspace(-13, -11,25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
+
+    crho1= ax.contourf(x_xz_c,y_xz_c,dust_1_rho_mod*UNIT_DEN,levels = logspace(-13, log10(3e-11),20), norm = LogNorm(), cmap = 'Blues', alpha = 1.0, extend = 'both', antialiased = True,zorder=4)
+
+    ax.contour(x_xz_c,y_xz_c,tau_ir,levels = array([0.5,1.0]), colors = 'black', linestyles = 'dotted', zorder = 20)
+    ax.plot(xx_exp, yy0, '--', c='k', lw=1, zorder=10)
+    ax.plot(xx_exp, yy_g, '-.', c='gray', lw=1, zorder=10)
+    ax.contour(x_xz_c,y_xz_c, dust_1_rho_xz/rho_xz,levels = [d2g_snow], cmap = 'Blues_r', alpha = 0.7, linewidths = 3.0, zorder = 4)
+    # ax.text(0.05, 0.95, 'pop$_1$', transform=axs[1,0].transAxes, fontsize=18, va='top', ha='left')
+    # ax.text(0.05, 0.05, 'pop$_0$', transform=axs[1,0].transAxes, fontsize=18, va='bottom', ha='left')
+
+    ax.streamplot(x1_exp_half,x3_exp, ice_flx_x_xz/normal2, ice_flx_z_xz/normal2,linewidth = lw_flx_ice, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='blue',zorder=4)
+    ax.streamplot(x1_exp_half,x3_exp, water_flx_x_xz/normal2, water_flx_z_xz/normal2,linewidth = lw_flx_water, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='pink',zorder=4)
+#get the advection flux of the ice and water vapor 
+
+#move the colorbar to be aligned with the bottom of top figure 
+    cbarrho = fig.colorbar(crho1, ax=ax,location = 'right', shrink = 0.45, pad =-0.15,anchor=(0,-0.))
+    cbarrho.set_ticks([1e-13, 1e-12,1e-11], labels = ['$10^{-13}$', '$10^{-12}$', '$10^{-11}$'])
+    cbarrho.ax.set_title(r'$\rho_{\mathrm{ice}} [g/cm^3]$', fontsize = 12)
+    cbarvap = fig.colorbar(ax0, ax=ax, location = 'right', shrink = 0.45, pad =0.1, anchor=(0,1))
+    cbarvap.set_ticks([1e-13, 1e-12, 1e-11], labels = ['$10^{-13}$', '$10^{-12}$', '$10^{-11}$'])
+    cbarvap.ax.set_title(r'$\rho_{\mathrm{vap}} [g/cm^3]$', fontsize = 12)
+
+    axm.set_xlabel(r'$R$ [AU]', fontsize = 13)
+    axm.set_ylabel(r'$z$ [AU]', fontsize = 12)
+    axm.set_xlim(rin/L_norm, rout/L_norm)
+    axm.set_ylim(-0.25, 0.25)
+# axs[mlot(rad, H_profile(rad)/AU, '--', c='gray', lw=1)
+# axs[mlot(rad, -H_profile(rad)/AU, '--', c='gray', lw=1)
+    axm.plot(xx_exp, -yy1, '--', c='k', lw=1, zorder=10)
+    axm.plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10)
+
+
+    cmp = axm.contourf(x_xz_c, y_xz_c, m_p_xz, levels = logspace(0, 2, 31), norm = LogNorm(),cmap = 'Purples', alpha = 1.0,extend = 'both')
+    axm.contour(x_xz_c, -y_xz_c, watercomp1, levels = [0.5], colors = 'k', linewidths = 2.0)
+    cwc = axm.contourf(x_xz_c, -y_xz_c, watercomp0, levels = linspace(0.4,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
+
+    cbar0 = fig.colorbar(cmp, ax=axm, location = 'right', shrink = 0.45, pad = - 0.15, anchor=(0,0))
+    cbar0.ax.set_title(r'$m [g]$', fontsize = 12)
+    cbar0.set_ticks([1e0, 1e1, 1e2], labels = ['$1$', '$10^{1}$', '$10^{2}$'])
+
+    cbarcomp0 = fig.colorbar(cwc, ax=axm, location='right', shrink=0.45, pad=0.04, anchor=(0,1))
+    cbarcomp0.ax.set_title(r'$f_{\mathrm{H_2 O}}$', fontsize = 12)
+    cbarcomp0.set_ticks([0.4, 0.7], labels = ['0.4', '0.7'])
+    
+
+    fig.savefig('./plots/2ddust_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
+
+
+    fig = plt.figure(figsize = (7,15),facecolor='white')
+    axes = fig.subplots(3,1)
+    ax = axes.flatten()
+    fig.subplots_adjust(hspace = 0.06)
+
+    ax[0].set_ylim(0, 30)
+# ax[0].plot(xx_exp,(sigma_gas-sigma_vap)*0.4, color = 'k', alpha = 1.0, label = '$ f_{\mathrm{i/g}} \Sigma_{\mathrm{xy}}$')
+# here the 0.4 is from the 0.8/2, in which 0.8 is the dust-to-gas flux ratio, so the vapor should be the half of it
+    ax[0].plot(xx_exp, sigma_ice0, c = colD['si'], lw = lwD['si'], label = 'ice 0')
+    ax[0].plot(xx_exp, sigma_sil0, c = colD['ss'], lw = lwD['ss'], label = 'silicate 0')
+    ax[0].plot(xx_exp, sigma_vap , c = colD['va'], lw = lwD['va'], label = 'vapor') 
+
+#plot the column density 
+# ice mass
+    r_in_index = sum(xx_exp < 1.0)
+    r_out_index = len(xx_exp) - ((sigma_ice / sigma_sil)[::-1] > 1.5).argmax()
+    dust_mass = sum(((sigma_ice)*2*pi* xx_exp* (xx_exp[1]-xx_exp[0]) * AU**2)[r_in_index:r_out_index])
+# ax[0].fill_between(xx_exp[r_in_index:r_out_index],0,sigma_ice[r_in_index:r_out_index],color = 'tab:blue',alpha = 0.3)
+    ax[0].annotate(r'$M_{\mathrm{ice}} = %.2f~M_{\oplus}$'%(dust_mass/M_e),xy = (0.3,0.5), xycoords = 'axes fraction',fontsize = 15)
+    ax[0].annotate(r'$f_{\mathrm{i/g}} \dot{M}_{\mathrm{acc}} /(3 \pi \nu)$',xy = (2.5,72), rotation = -10, fontsize = 16)
+# ax[0].set_ylim(0,800)
+# ax[0].set_xlabel('$r$ [au]')
+    ax[0].set_ylabel(r'$\Sigma$ [g~cm$^{-2}$]')
+# ax[0].legend(handles=legend_handles,
+#     loc = 'upper right',fontsize = 15,frameon = False)
+# d2g
+# ax00 = ax[0].twinx()
+    ax00 = ax[1]
+    ax00.set_yscale('log')
+    ax00.plot(rad, ((dust_1_rho_xz + dust_2_rho_xz + dust_3_rho_xz + dust_4_rho_xz)/rho_xz)[:,-1], 'k', lw = 3.0,label = '$d/g$')
+# ax00.plot(xx_exp, (sigma_ice+sigma_sil)/sigma_gas, 'k', lw = 3.0,label = '$d/g$')
+    ax00.plot(rad, (dust_5_rho_xz/rho_xz)[:,-1],'tab:red', linestyle = '-', lw = 3.0)
+    ax00.set_ylim(1e-3,1.0)
+
+
+# # ax00.vlines(r_snow, -0.01, 1.2, linestyle = '--', color = 'grey')
+# ax00.vlines(r_pk, -0.01, 1.2, linestyle = '--', color = 'grey')
+# ax00.plot([2.177,2.617],[d2g_pk/2]*2,linestyle = '--', color = 'grey')
+# # ax00.vlines(r_vap_outer, -0.01, 1.2, linestyle = '--', color = 'grey')
+# ax00.annotate('$r_{\mathrm{snow,mid}}$',xy = (r_snow,0.8),fontsize = 20)
+# ax00.annotate('$r_{\mathrm{pk}}$',xy = (r_pk,0.9),fontsize = 20)
+# ax00.annotate('FWHM',xy = (r_pk - 0.1,0.27),fontsize = 15)
+# # ax00.annotate('$r_{\mathrm{vap,outer}}$',xy = (r_vap_outer,0.9),fontsize = 20)
+# ax00.set_ylabel('solid/vapor-to-gas ratio')
+
+    custom_lines2 = [Line2D([0], [10], color='tab:red', lw=3, linestyle='-',label='vapor'),
+                    Line2D([0,0.1], [0,0.1], color='k', lw=3, linestyle='-',label='ice+sil')]
+    ax[1].legend(handles=custom_lines2,handlelength = 2, loc = (0.74,0.6))
+
+# flux
+    p2g_flux_inp = []
+    for i in range(1, N_P*N_Z + 1): 
+        kk = 'p2g_flux_'+str(i)
+        p2g_flux_inp.append(athinputs['dust'][kk])
+
+    ax[2].set_yscale('symlog', linthresh = 1e-2)
+    ax[2].plot(xx_exp,flux_ice_face*1e8, lw =lwD['si'],color='darkblue', alpha = alpD['si'], label = r'$\mathcal{F}_{\mathrm{ice}}$')
+# ax[2].plot(xx_exp,(flux_ice_face + flux_ice1_face)*1e8,lw =lwD['li'],color='blue', alpha = 1, label = r'$\mathcal{F}_{\mathrm{ice}}$')
+# ax[2].plot(xx_exp,flx_ice1_x*1e8,lw =5,color='skyblue', alpha = 0.8, label = r'$\mathcal{F}_{\mathrm{ice,small}}$')
+# ax[2].plot(xx_exp,flx_ice_x*1e8,lw =5,color='black', alpha = 0.4, label = r'$\mathcal{F}_{\mathrm{ice,big}}$')
+    ax[2].plot(xx_exp,flux_sil_face*1e8, lw =lwD['ss'],color=colD['ss'], alpha = alpD['ss'], label = r'$\mathcal{F}_{\mathrm{sil}}$')
+# ax[2].plot(xx_exp,(flux_sil1_face + flux_sil_face)*1e8,lw =lwD['ls'],color='orange', alpha = 1, label = r'$\mathcal{F}_{\mathrm{sil}}$')
+# ax[2].plot(xx_exp,flux_sil*1e8,
+# ax[2].plot(xx_exp,flux_sil1*1e8,'tab:blue', lw =2.0 , alpha = 1.0, linestyle = '-', label = r'$\mathcal{F}_{\mathrm{sil,small}}$')
+
+    ax[2].axhline(-0.1, c= 'k', ls='--')
+    ax[2].plot(xx_exp,flux_vap_face*1e8,  lw =lwD['va'],color=colD['va'], alpha = alpD['va'], label = r'$\mathcal{F}_{\mathrm{vap}}$')
+    ax[2].plot(xx_exp,flux_water_face*1e8,lw =3,color='lightblue', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
+    ax[2].plot(xx_exp,flux_gas_face*1e8,lw =3,color='grey', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{xy}}$')
+
+# ax[2].plot(xx_exp, -xx_exp/xx_exp,'k--')
+# ax[2].plot(xx_exp, -xx_exp/xx_exp*0.4,'k--')
+    ax[2].axhline(0.0, c= 'k', ls='--')
+# ax[2].axhline(-0.4, c= 'k', ls='--')
+
+    ax[2].set_xlim(rin/L_norm,rout/L_norm)
+    ax[2].set_ylim(-3,5.0)
+    ax[2].annotate(r'$\dot{M}_{\mathrm{acc}}$',xy=(1.0,-0.9),fontsize = 15)
+    ax[2].annotate(r'$f_{\mathrm{i/g}} \dot{M}_{\mathrm{acc}}$',xy=(1.0,-0.25),fontsize = 15)
+    ax[2].set_ylabel(r'Radial Mass Flux [$10^{-8}M_{\odot}$/yr]',fontsize = 15)
+
+    ax[2].legend(loc='upper right', fontsize = 10)
+    for i in range(len(axes)):
+        ax[i].set_xlim(rin/L_norm,rout/L_norm)
+    for i in range(2):  
+        ax[i].set_xticklabels([])   
+
+    ax[2].set_xlabel(r'$r$ [au]')
+
+    ax[0].annotate('(a)',xy = (0.02,0.92),xycoords = 'axes fraction',fontsize = 20)
+
+    ax[1].annotate('(b)',xy = (0.02,0.92),xycoords = 'axes fraction',fontsize = 20)
+    ax[2].annotate('(c)',xy = (0.02,0.92),xycoords = 'axes fraction',fontsize = 20)
+
+    ax[1].axvline(xx_exp[51], ls='dotted', c= 'black', lw=1)
+
+    plt.savefig('./plots/fig_snow_2d_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500) 
+    plt.close()
+import pdb; pdb.set_trace()
 
 #==============================================================================
 #==============================================================================
