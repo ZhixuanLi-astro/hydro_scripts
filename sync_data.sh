@@ -5,9 +5,9 @@
 #   -> syncs *00744* files from /mnt/sdc/Zhixuan/athena_works/passive_test/
 
 if [ $# -ne 2 ]; then
-    echo "Usage: $0 <num> <dir>"
-    echo "  e.g.  $0 744 passive_test"
-    exit 1
+	echo "Usage: $0 <num> <dir>"
+	echo "  e.g.  $0 744 passive_test"
+	exit 1
 fi
 
 NUM=$(printf "%05d" "$1")
@@ -25,23 +25,24 @@ ssh -M -S "$SOCKET" -f -N -o ControlPersist=600 "$REMOTE" 2>/dev/null
 
 # If the master connection failed (e.g. socket stale), force a fresh one
 if [ $? -ne 0 ]; then
-    ssh -M -S "$SOCKET" -f -N -o ControlPersist=600 "$REMOTE"
+	ssh -M -S "$SOCKET" -f -N -o ControlPersist=600 "$REMOTE"
 fi
 
 echo "SSH master connection established (password entered once)."
 
 # --- Rsync the data files ---
 rsync -r -u --progress \
-    -e "ssh -S $SOCKET" \
-    "${REMOTE}:${REMOTE_DIR}/" \
-    "$LOCAL_DIR/" \
-    --include='*/' \
-    --include="*out1.*${NUM}*.athdf" \
-    --include="*out1.*${NUM}*.athdf.xdmf" \
-    --include="*out2.*${NUM}*.athdf" \
-    --include="*out2.*${NUM}*.athdf.xdmf" \
-    --include="*iceline.*${NUM}*.rst" \
-    --exclude='*'
+	-e "ssh -S $SOCKET" \
+	"${REMOTE}:${REMOTE_DIR}/" \
+	"$LOCAL_DIR/" \
+	--include='*/' \
+	--include="*out1.*${NUM}*.athdf" \
+	--include="*out1.*${NUM}*.athdf.xdmf" \
+	--include="*out2.*${NUM}*.athdf" \
+	--include="*out2.*${NUM}*.athdf.xdmf" \
+	--include="*iceline.*${NUM}*.rst" \
+	--include="athinput.iceline" \
+	--exclude='*'
 
 # --- Clean up the SSH master connection ---
 ssh -S "$SOCKET" -O exit "$REMOTE" 2>/dev/null
