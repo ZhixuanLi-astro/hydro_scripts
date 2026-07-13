@@ -642,6 +642,10 @@ for j in range(len(zz_exp)):
             flux_vap_z_intpl[j,i] = 0.0
             flux_gas_x_intpl[j,i] = 0.0
             flux_gas_z_intpl[j,i] = 0.0 
+            flux_ice_x_intpl[j,i] = 0.0 
+            flux_ice1_x_intpl[j,i] = 0.0 
+            flux_sil_x_intpl[j,i] = 0.0 
+            flux_sil1_x_intpl[j,i] = 0.0
             st_intpl[j,i] = 0.0 
             st1_intpl[j,i] = 0.0
 
@@ -954,6 +958,13 @@ flux_ice1_face = sum(flux_ice1_x_intpl*dz,axis = 0) *2.0*(2*pi*xx_exp*L_norm)
 flux_sil_face = sum(flux_sil_x_intpl*dz,axis = 0)  *2.0*(2*pi*xx_exp*L_norm)
 flux_sil1_face = sum(flux_sil1_x_intpl*dz,axis = 0) *2.0*(2*pi*xx_exp*L_norm)
 flux_water_face = sum((flux_vap_x_intpl + flux_ice_x_intpl +flux_ice1_x_intpl)*dz,axis = 0) *2.0 *(2*pi*xx_exp*L_norm)
+
+# flux_ice1_face = sum(flx_ice_x1[0, :, :], axis=0) * 2.0
+# flux_ice_face = sum(flx_ice1_x1[0, :, :], axis=0) * 2.0 
+# flux_sil_face = sum(flx_sil_x1[0, :, :], axis=0) * 2.0 
+# flux_sil1_face = sum(flx_sil1_x1[0, :, :], axis=0) * 2.0 
+# flux_vap_face = sum(flx_vap_x1[0, :, :], axis=0) * 2.0
+# flux_water_faced = sum((flx_vap_x1[0, :, :] + flx_ice_x1[0, :, :] + flx_ice1_x1[0, :, :]), axis=0) * 2.0
 
 ## advective flux
 flux_vap_adv = sum(dust_5_rho_intpl*dz*vx_intpl,axis = 0)*2.0 *(2*pi*xx_exp*L_norm)
@@ -1345,7 +1356,6 @@ if singlepop:
 
     plt.savefig('./plots/fig_snow_2d_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500) 
     plt.close()
-import pdb; pdb.set_trace()
 
 #==============================================================================
 #==============================================================================
@@ -1514,7 +1524,6 @@ cbarcomp0.ax.hlines(0.5, 0,1, color='k', linewidth=2)  # Mark the 0.5 line on th
 
 plt.savefig('./plots/2ddust_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
 plt.close()
-import pdb; pdb.set_trace()
 
     
 
@@ -1850,7 +1859,7 @@ ax[2].plot(xx_exp,flux_sil1_face*1e8,lw =lwD['ls'],color=colD['ls'], alpha = alp
 
 ax[2].axhline(-0.1, c= 'k', ls='--')
 ax[2].plot(xx_exp,flux_vap_face*1e8,  lw =lwD['va'],color=colD['va'], alpha = alpD['va'], label = r'$\mathcal{F}_{\mathrm{vap}}$')
-ax[2].plot(xx_exp,flux_water_face*1e8,lw =3,color='lightblue', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
+ax[2].plot(xx_exp,flux_water_face*1e8,lw =1,color='black', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
 ax[2].plot(xx_exp,flux_gas_face*1e8,lw =3,color='grey', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{xy}}$')
 
 # ax[2].plot(xx_exp, -xx_exp/xx_exp,'k--')
