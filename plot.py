@@ -1217,7 +1217,7 @@ if singlepop:
     cbarrho = fig.colorbar(crho1, ax=ax,location = 'right', shrink = 0.45, pad =-0.15,anchor=(0,-0.))
     cbarrho.set_ticks([1e-13, 1e-12,1e-11], labels = ['$10^{-13}$', '$10^{-12}$', '$10^{-11}$'])
     cbarrho.ax.set_title(r'$\rho_{\mathrm{ice}} [g/cm^3]$', fontsize = 12)
-    cbarvap = fig.colorbar(ax0, ax=ax, location = 'right', shrink = 0.45, pad =0.1, anchor=(0,1))
+    cbarvap = fig.colorbar(ax0, ax=ax, location = 'right', shrink = 0.45, pad =0.07, anchor=(0,1))
     cbarvap.set_ticks([1e-13, 1e-12, 1e-11], labels = ['$10^{-13}$', '$10^{-12}$', '$10^{-11}$'])
     cbarvap.ax.set_title(r'$\rho_{\mathrm{vap}} [g/cm^3]$', fontsize = 12)
 
@@ -1275,11 +1275,11 @@ if singlepop:
 # d2g
 # ax00 = ax[0].twinx()
     ax00 = ax[1]
-    ax00.set_yscale('log')
-    ax00.plot(rad, ((dust_1_rho_xz + dust_2_rho_xz + dust_3_rho_xz + dust_4_rho_xz)/rho_xz)[:,-1], 'k', lw = 3.0,label = '$d/g$')
+    # ax00.set_yscale('log')
+    ax00.plot(rad, ((dust_1_rho_xz + dust_2_rho_xz)/rho_xz)[:,-1], 'k', lw = 3.0,label = '$d/g$')
 # ax00.plot(xx_exp, (sigma_ice+sigma_sil)/sigma_gas, 'k', lw = 3.0,label = '$d/g$')
     ax00.plot(rad, (dust_5_rho_xz/rho_xz)[:,-1],'tab:red', linestyle = '-', lw = 3.0)
-    ax00.set_ylim(1e-3,1.0)
+    ax00.set_ylim(0.,1.0)
 
 
 # # ax00.vlines(r_snow, -0.01, 1.2, linestyle = '--', color = 'grey')
