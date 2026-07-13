@@ -642,6 +642,10 @@ for j in range(len(zz_exp)):
             flux_vap_z_intpl[j,i] = 0.0
             flux_gas_x_intpl[j,i] = 0.0
             flux_gas_z_intpl[j,i] = 0.0 
+            flux_ice_x_intpl[j,i] = 0.0 
+            flux_ice1_x_intpl[j,i] = 0.0 
+            flux_sil_x_intpl[j,i] = 0.0 
+            flux_sil1_x_intpl[j,i] = 0.0
             st_intpl[j,i] = 0.0 
             st1_intpl[j,i] = 0.0
 
@@ -893,7 +897,7 @@ C = ax.contour(x_xz_c,y_xz_c,tau_ir,levels = array([1.0]), colors = 'purple', li
 # C = ax.contour(xx_exp_mesh, zz_exp_mesh,tau_ir_intpl,levels = array([0.1, 1.0, 2, 100]), colors = 'purple', linestyles = 'dashed', linewidths = 3.0, zorder = 5)
 ax.annotate(r'$\tau_{ir}=1$', xy=(2.5, 0.25), xytext=(2.5, 0.25), fontsize = 20, color = 'purple', zorder = 10, fontweight = 'bold',rotation = 20)
 
-# fig.savefig('./plots/vap_obs_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500)
+fig.savefig('./plots/vap_obs_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500)
 
 fig, axs = plt.subplots(2, 1, figsize=(6, 6))
 m_p1_safe = where(m_p1[0].T > 0.0, m_p1[0].T, nan)
@@ -954,6 +958,13 @@ flux_ice1_face = sum(flux_ice1_x_intpl*dz,axis = 0) *2.0*(2*pi*xx_exp*L_norm)
 flux_sil_face = sum(flux_sil_x_intpl*dz,axis = 0)  *2.0*(2*pi*xx_exp*L_norm)
 flux_sil1_face = sum(flux_sil1_x_intpl*dz,axis = 0) *2.0*(2*pi*xx_exp*L_norm)
 flux_water_face = sum((flux_vap_x_intpl + flux_ice_x_intpl +flux_ice1_x_intpl)*dz,axis = 0) *2.0 *(2*pi*xx_exp*L_norm)
+
+flux_ice1_faced = sum(flx_ice_x1[0, :, :], axis=0) * 2.0
+flux_ice_faced = sum(flx_ice1_x1[0, :, :], axis=0) * 2.0 
+flux_sil_faced = sum(flx_sil_x1[0, :, :], axis=0) * 2.0 
+flux_sil1_faced = sum(flx_sil1_x1[0, :, :], axis=0) * 2.0 
+flux_vap_faced = sum(flx_vap_x1[0, :, :], axis=0) * 2.0
+flux_water_faced = sum((flx_vap_x1[0, :, :] + flx_ice_x1[0, :, :] + flx_ice1_x1[0, :, :]), axis=0) * 2.0
 
 ## advective flux
 flux_vap_adv = sum(dust_5_rho_intpl*dz*vx_intpl,axis = 0)*2.0 *(2*pi*xx_exp*L_norm)
@@ -1312,9 +1323,9 @@ if singlepop:
 # ax[2].plot(xx_exp,flux_sil*1e8,
 # ax[2].plot(xx_exp,flux_sil1*1e8,'tab:blue', lw =2.0 , alpha = 1.0, linestyle = '-', label = r'$\mathcal{F}_{\mathrm{sil,small}}$')
 
-    ax[2].axhline(-0.1, c= 'k', ls='--')
+    ax[2].axhline(-0.05, c= 'k', ls='--')
     ax[2].plot(xx_exp,flux_vap_face*1e8,  lw =lwD['va'],color=colD['va'], alpha = alpD['va'], label = r'$\mathcal{F}_{\mathrm{vap}}$')
-    ax[2].plot(xx_exp,flux_water_face*1e8,lw =3,color='lightblue', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
+    ax[2].plot(xx_exp,flux_water_face*1e8,lw =3,color='cyan', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
     ax[2].plot(xx_exp,flux_gas_face*1e8,lw =3,color='grey', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{xy}}$')
 
 # ax[2].plot(xx_exp, -xx_exp/xx_exp,'k--')
@@ -1345,8 +1356,8 @@ if singlepop:
 
     plt.savefig('./plots/fig_snow_2d_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500) 
     plt.close()
-import pdb; pdb.set_trace()
 
+import pdb; pdb.set_trace()
 #==============================================================================
 #==============================================================================
 fig, axs = plt.subplots(2, 2, figsize=(18, 12), constrained_layout=True, sharex=True)
@@ -1514,7 +1525,6 @@ cbarcomp0.ax.hlines(0.5, 0,1, color='k', linewidth=2)  # Mark the 0.5 line on th
 
 plt.savefig('./plots/2ddust_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
 plt.close()
-import pdb; pdb.set_trace()
 
     
 
@@ -1837,21 +1847,22 @@ for i in range(1, N_P*N_Z + 1):
     p2g_flux_inp.append(athinputs['dust'][kk])
 
 ax[2].set_yscale('symlog', linthresh = 1e-2)
+ax[2].axhline(-0.2, c= 'k', ls='--')
 ax[2].plot(xx_exp,flux_ice_face*1e8, lw =lwD['si'],color='darkblue', alpha = alpD['si'], label = r'$\mathcal{F}_{\mathrm{ice, small}}$')
 ax[2].plot(xx_exp,flux_ice1_face*1e8,lw =lwD['li'],color='darkblue', alpha = alpD['li'], label = r'$\mathcal{F}_{\mathrm{ice, big}}$')
-# ax[2].plot(xx_exp,(flux_ice_face + flux_ice1_face)*1e8,lw =lwD['li'],color='blue', alpha = 1, label = r'$\mathcal{F}_{\mathrm{ice}}$')
-# ax[2].plot(xx_exp,flx_ice1_x*1e8,lw =5,color='skyblue', alpha = 0.8, label = r'$\mathcal{F}_{\mathrm{ice,small}}$')
-# ax[2].plot(xx_exp,flx_ice_x*1e8,lw =5,color='black', alpha = 0.4, label = r'$\mathcal{F}_{\mathrm{ice,big}}$')
 ax[2].plot(xx_exp,flux_sil_face*1e8, lw =lwD['ss'],color=colD['ss'], alpha = alpD['ss'], label = r'$\mathcal{F}_{\mathrm{sil, small}}$')
 ax[2].plot(xx_exp,flux_sil1_face*1e8,lw =lwD['ls'],color=colD['ls'], alpha = alpD['ls'], label = r'$\mathcal{F}_{\mathrm{sil, big}}$')
-# ax[2].plot(xx_exp,(flux_sil1_face + flux_sil_face)*1e8,lw =lwD['ls'],color='orange', alpha = 1, label = r'$\mathcal{F}_{\mathrm{sil}}$')
-# ax[2].plot(xx_exp,flux_sil*1e8,
-# ax[2].plot(xx_exp,flux_sil1*1e8,'tab:blue', lw =2.0 , alpha = 1.0, linestyle = '-', label = r'$\mathcal{F}_{\mathrm{sil,small}}$')
 
-ax[2].axhline(-0.2, c= 'k', ls='--')
 ax[2].plot(xx_exp,flux_vap_face*1e8,  lw =lwD['va'],color=colD['va'], alpha = alpD['va'], label = r'$\mathcal{F}_{\mathrm{vap}}$')
-ax[2].plot(xx_exp,flux_water_face*1e8,lw =3,color='lightblue', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
+ax[2].plot(xx_exp,flux_water_face/xx_exp*1e8,lw =3,color='cyan', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
 ax[2].plot(xx_exp,flux_gas_face*1e8,lw =3,color='grey', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{xy}}$')
+
+# ax[2].plot(rad, flux_ice_faced*1e8, lw =lwD['si'],color='darkblue', alpha = alpD['si'], ls = '--')
+# ax[2].plot(rad, flux_ice1_faced*1e8,lw =lwD['li'],color='darkblue', alpha = alpD['li'], ls = '--')
+# ax[2].plot(rad, flux_sil_faced*1e8, lw =lwD['ss'],color=colD['ss'], alpha = alpD['ss'], ls = '--')
+# ax[2].plot(rad, flux_sil1_faced*1e8,lw =lwD['ls'],color=colD['ls'], alpha = alpD['ls'], ls = '--')
+# ax[2].plot(rad, flux_vap_faced*1e8,  lw =lwD['va'],color=colD['va'], alpha = alpD['va'], ls = '--')
+# ax[2].plot(rad, flux_water_faced*1e8,lw =1,color='black', alpha = 0.6, ls = '--')
 
 # ax[2].plot(xx_exp, -xx_exp/xx_exp,'k--')
 # ax[2].plot(xx_exp, -xx_exp/xx_exp*0.4,'k--')
