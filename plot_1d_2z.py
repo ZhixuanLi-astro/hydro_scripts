@@ -372,6 +372,8 @@ try:
     # for multiple dustfluids
     flx_sil_x1 = data_uov['flx_sil_x1_1']
     flx_sil1_x1 = data_uov['flx_sil_x1_2']
+    # flx_ice_x1  = data_uov['flx_ice_x1_1']
+    # flx_ice1_x1 = data_uov['flx_ice_x1_2']
 except:
     print("no st, m_p, s_p, flx found")
     st = zeros_like(rho)
@@ -442,6 +444,8 @@ flx_x1 *= 2*pi*rad_f[:-1]* UNIT_Fm * L_norm
 
 flx_sil_x1 *= 2*pi*rad_f[:-1]* UNIT_Fm *L_norm 
 flx_sil1_x1 *= 2*pi*rad_f[:-1]* UNIT_Fm *L_norm
+# flx_ice_x1 *= 2*pi*rad_f[:-1]* UNIT_Fm *L_norm
+# flx_ice1_x1 *= 2*pi*rad_f[:-1]* UNIT_Fm *L_norm
 # slices
 index_phi = 0
 rho_xz = rho[index_phi,:,:].T
@@ -484,12 +488,15 @@ sigma_e = rho_e*H_gas_cgs*sqrt(2*pi)
 #plot the gas flux 
 fig, ax = plt.subplots(figsize=(6,5))
 ax.set_ylim(-1.1, 0.01)
-ax.plot(rad, flx_x1[0,0]/1.e-8, 'x-',label='gas flux')
+# ax.plot(rad, flx_x1[0,0]/1.e-8, 'x-',label='gas flux')
 # ax.plot(rad, rho[0,0]*vx1[0,0]*2*pi*rad/1.e-8*UNIT_Fm, label='gas advective flux', ls='--')
-ax.plot(rad, flx_sil_x1[0,0]/1.e-8, label='small silicate flux')
-ax.plot(rad, dust_1_rho[0,0]*dust_1_vx1[0,0]*2*pi*rad/1.e-8*UNIT_Fm, label='small sil advective flux', ls='--')
-ax.plot(rad, flx_sil1_x1[0,0]/1.e-8, label='large silicate flux') 
+ax.plot(rad, flx_sil_x1[0,0]/1.e-8, label='small ice')
+# ax.plot(rad, flx_vap_x1[0,0]/1.e-8, label='vapor')
+
+# ax.plot(rad, dust_1_rho[0,0]*dust_1_vx1[0,0]*2*pi*rad/1.e-8*UNIT_Fm, label='small sil advective flux', ls='--')
+ax.plot(rad, flx_sil1_x1[0,0]/1.e-8, label='large ice') 
 # ax.plot(rad, rho_xz.T[0]*vx1[index_phi,0]*dS_R[0,0]*UNIT_Fm/1.e-8, label='gas advective flux', ls='--')
+ax.legend()
 ax.set_xlabel('r (au)')
 ax.set_ylabel('flux (1e-8 Msun/yr)')
 plt.tight_layout()

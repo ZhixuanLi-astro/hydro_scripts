@@ -1183,7 +1183,7 @@ axs[0,0].legend(handles=legend_handles_panel1, loc='upper right', frameon=True, 
 fig.legend(handles=legend_handles, loc='upper left', ncol=3, frameon=False, fontsize=15, bbox_to_anchor=(0.05,1.00))
 # plt.tight_layout()
 # if not singlepop:
-plt.savefig('./plots/2dprop_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
+plt.savefig('./plots/2dprop_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')   
 plt.close()
 
 
@@ -1848,7 +1848,7 @@ ax[2].plot(xx_exp,flux_sil1_face*1e8,lw =lwD['ls'],color=colD['ls'], alpha = alp
 # ax[2].plot(xx_exp,flux_sil*1e8,
 # ax[2].plot(xx_exp,flux_sil1*1e8,'tab:blue', lw =2.0 , alpha = 1.0, linestyle = '-', label = r'$\mathcal{F}_{\mathrm{sil,small}}$')
 
-ax[2].axhline(-0.1, c= 'k', ls='--')
+ax[2].axhline(-0.2, c= 'k', ls='--')
 ax[2].plot(xx_exp,flux_vap_face*1e8,  lw =lwD['va'],color=colD['va'], alpha = alpD['va'], label = r'$\mathcal{F}_{\mathrm{vap}}$')
 ax[2].plot(xx_exp,flux_water_face*1e8,lw =3,color='lightblue', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
 ax[2].plot(xx_exp,flux_gas_face*1e8,lw =3,color='grey', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{xy}}$')
