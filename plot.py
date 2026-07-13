@@ -913,7 +913,7 @@ cbarmmax = fig.colorbar(bbar, format=ticker.FuncFormatter(formatnum), ax = axs[1
 cbarmmax.set_ticks([1e-5, 1e-4, 1e-3, 1e-2, 1e-1])
 cbarmmax.ax.set_title('$m_{max}$')
 
-# plt.savefig('./plots/mmax_{:05d}.png'.format(int(filenum)) ,dpi=300)
+plt.savefig('./plots/mmax_{:05d}.png'.format(int(filenum)) ,dpi=300)
 plt.close()
 
 colD = {'ga':'black', 'ss':'tab:orange', 'ms':'tab:orange', 'ls':'tab:orange', 'si':'tab:blue', 'mi':"tab:blue" ,'li':'tab:blue', 'va':'tab:purple'}
@@ -1183,7 +1183,7 @@ axs[0,0].legend(handles=legend_handles_panel1, loc='upper right', frameon=True, 
 fig.legend(handles=legend_handles, loc='upper left', ncol=3, frameon=False, fontsize=15, bbox_to_anchor=(0.05,1.00))
 # plt.tight_layout()
 # if not singlepop:
-    plt.savefig('./plots/2dprop_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
+plt.savefig('./plots/2dprop_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
 plt.close()
 
 
@@ -1886,212 +1886,212 @@ plt.close()
 
 
 
-fig,axes = plt.subplots(nrows = 2, ncols = 1,figsize = (11,9))
-fig.set_facecolor('white')
-plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.2, hspace= 0.1)
-ax = axes.flatten()
+# fig,axes = plt.subplots(nrows = 2, ncols = 1,figsize = (11,9))
+# fig.set_facecolor('white')
+# plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.2, hspace= 0.1)
+# ax = axes.flatten()
 
-# the vapor
-ax0 = ax[0].contourf(x_xz_c,y_xz_c,dust_5_rho_mod,levels = logspace(log10(d2g_snow),log10(2.0),15), norm = LogNorm(), cmap = 'RdPu', alpha = 0.8, extend = 'both',zorder=1)
-# the ices
-ax00 = ax[0].contourf(x_xz_c,y_xz_c,dust_1_rho_mod,levels = logspace(log10(d2g_snow),log10(2.0),15), norm = LogNorm(), cmap = 'Blues', alpha = 0.8, extend = 'both', edgecolor='none', antialiased=True, zorder=3)
-ax000 = ax[0].contourf(x_xz_c,y_xz_c,dust_3_rho_mod,levels = logspace(log10(d2g_snow),log10(2.0),15), norm = LogNorm(), cmap = 'Greens', alpha = 1, extend = 'both', edgecolor='none', antialiased = True,zorder=2)
-# ax0 = ax[0].pcolormesh(x_xz,y_xz,q_diff_xz,norm = Normalize(vmin = -0.01,vmax = 0.01,clip = True) ,cmap = 'coolwarm', alpha = 1)
-# ax0 = ax[0].pcolormesh(x_xz,y_xz,st_xz * (x_xz_c/3.0)**(-1.5),norm = Normalize(vmin = 0.01,vmax = 0.3,clip = True) ,cmap = 'coolwarm', alpha = 1)
+# # the vapor
+# ax0 = ax[0].contourf(x_xz_c,y_xz_c,dust_5_rho_mod,levels = logspace(log10(d2g_snow),log10(2.0),15), norm = LogNorm(), cmap = 'RdPu', alpha = 0.8, extend = 'both',zorder=1)
+# # the ices
+# ax00 = ax[0].contourf(x_xz_c,y_xz_c,dust_1_rho_mod,levels = logspace(log10(d2g_snow),log10(2.0),15), norm = LogNorm(), cmap = 'Blues', alpha = 0.8, extend = 'both', edgecolor='none', antialiased=True, zorder=3)
+# ax000 = ax[0].contourf(x_xz_c,y_xz_c,dust_3_rho_mod,levels = logspace(log10(d2g_snow),log10(2.0),15), norm = LogNorm(), cmap = 'Greens', alpha = 1, extend = 'both', edgecolor='none', antialiased = True,zorder=2)
+# # ax0 = ax[0].pcolormesh(x_xz,y_xz,q_diff_xz,norm = Normalize(vmin = -0.01,vmax = 0.01,clip = True) ,cmap = 'coolwarm', alpha = 1)
+# # ax0 = ax[0].pcolormesh(x_xz,y_xz,st_xz * (x_xz_c/3.0)**(-1.5),norm = Normalize(vmin = 0.01,vmax = 0.3,clip = True) ,cmap = 'coolwarm', alpha = 1)
 
-#zxl: this we change to the sum of the ice in different populations.
-ice_rho_xz_tot = dust_1_rho_xz + dust_3_rho_xz
-ax[0].contour(x_xz_c,y_xz_c, dust_1_rho_xz/rho_xz,levels = [d2g_snow], cmap = 'Blues_r', alpha = 0.7, linewidths = 3.0)
-ax[0].contour(x_xz_c,y_xz_c, dust_3_rho_xz/rho_xz,levels = [d2g_snow], cmap = 'Greens_r', alpha = 0.7, linewidths = 3.0)
-# ax[0].contour(x_xz_c,y_xz_c,r_snow_2d(tem_xz,rho_xz,0.4) ,levels = [1.e-3,1.0,1.e3], cmap = 'Greens_r', alpha = 0.7, linewidths = 5.0)
+# #zxl: this we change to the sum of the ice in different populations.
+# ice_rho_xz_tot = dust_1_rho_xz + dust_3_rho_xz
+# ax[0].contour(x_xz_c,y_xz_c, dust_1_rho_xz/rho_xz,levels = [d2g_snow], cmap = 'Blues_r', alpha = 0.7, linewidths = 3.0)
+# ax[0].contour(x_xz_c,y_xz_c, dust_3_rho_xz/rho_xz,levels = [d2g_snow], cmap = 'Greens_r', alpha = 0.7, linewidths = 3.0)
+# # ax[0].contour(x_xz_c,y_xz_c,r_snow_2d(tem_xz,rho_xz,0.4) ,levels = [1.e-3,1.0,1.e3], cmap = 'Greens_r', alpha = 0.7, linewidths = 5.0)
 
-# normalized lw of flux
-lw_flx_ice =sqrt(ice_flx_x_xz**2 + ice_flx_z_xz**2)/normal2
-lw_flx_ice1 = sqrt(ice1_flx_x_xz**2 + ice1_flx_z_xz**2)/normal2
-lw_flx_water = sqrt(water_flx_x_xz**2 + water_flx_z_xz**2)/normal2
-lw_flx_ice = 2.0*sqrt(lw_flx_ice)
-lw_flx_ice1 = 2.0*sqrt(lw_flx_ice1)
-lw_flx_water = 2.0*sqrt(lw_flx_water)
+# # normalized lw of flux
+# lw_flx_ice =sqrt(ice_flx_x_xz**2 + ice_flx_z_xz**2)/normal2
+# lw_flx_ice1 = sqrt(ice1_flx_x_xz**2 + ice1_flx_z_xz**2)/normal2
+# lw_flx_water = sqrt(water_flx_x_xz**2 + water_flx_z_xz**2)/normal2
+# lw_flx_ice = 2.0*sqrt(lw_flx_ice)
+# lw_flx_ice1 = 2.0*sqrt(lw_flx_ice1)
+# lw_flx_water = 2.0*sqrt(lw_flx_water)
 
-# sublimation / condensation rate
-P_eq = P_eq0*exp(-T_a/tem_xz)
-P_vap = dust_3_rho_xz * kB_mp * tem_xz / mu_z
-rate_ratio = P_eq/P_vap * (dust_3_rho_xz/dust_1_rho_xz)
+# # sublimation / condensation rate
+# P_eq = P_eq0*exp(-T_a/tem_xz)
+# P_vap = dust_3_rho_xz * kB_mp * tem_xz / mu_z
+# rate_ratio = P_eq/P_vap * (dust_3_rho_xz/dust_1_rho_xz)
 
-# legend
-legends = [Line2D([0], [0], color='k', lw=2, label=r'$10^{-3}~\rho_{0}c_{\mathrm{s,0}}$')]
-ax[0].legend(handles=legends, loc='upper left',fontsize = 15,frameon = False)
+# # legend
+# legends = [Line2D([0], [0], color='k', lw=2, label=r'$10^{-3}~\rho_{0}c_{\mathrm{s,0}}$')]
+# ax[0].legend(handles=legends, loc='upper left',fontsize = 15,frameon = False)
 
-ax[0].streamplot(x1_exp_half,x3_exp, ice_flx_x_xz/normal2, ice_flx_z_xz/normal2,linewidth = lw_flx_ice, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='blue')
-ax[0].streamplot(x1_exp_half,x3_exp, ice1_flx_x_xz/normal2, ice1_flx_z_xz/normal2,linewidth = lw_flx_ice1, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='cyan')
-ax[0].streamplot(x1_exp_half,x3_exp, water_flx_x_xz/normal2, water_flx_z_xz/normal2,linewidth = lw_flx_water, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='pink')
-# ax[0].streamplot(x1_exp_half,x3_exp, water_flx_x_xz/normal2, water_flx_z_xz/normal2,linewidth = lw_flx, arrowstyle = '->', density = 1.5, broken_streamlines = True, color ='w')
-# ax[0].streamplot(x1_exp_half,x3_exp, (gas_flx_x_xz- vap_flx_x_xz)/normal2, (gas_flx_z_xz-vap_flx_z_xz)/normal2,linewidth = lw_flx4, arrowstyle = '->', density = 1.6, broken_streamlines = True, color ='white')
-# ax[0].streamplot(x1_exp_half,x3_exp, vx_xz/normal, vz_xz/normal,linewidth = 0.75
-#                 ,arrowstyle = '->', density = 2.0, broken_streamlines = True, color ='grey', norm = LogNorm(1.e-5,1.e-2,clip = True))
+# ax[0].streamplot(x1_exp_half,x3_exp, ice_flx_x_xz/normal2, ice_flx_z_xz/normal2,linewidth = lw_flx_ice, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='blue')
+# ax[0].streamplot(x1_exp_half,x3_exp, ice1_flx_x_xz/normal2, ice1_flx_z_xz/normal2,linewidth = lw_flx_ice1, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='cyan')
+# ax[0].streamplot(x1_exp_half,x3_exp, water_flx_x_xz/normal2, water_flx_z_xz/normal2,linewidth = lw_flx_water, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='pink')
+# # ax[0].streamplot(x1_exp_half,x3_exp, water_flx_x_xz/normal2, water_flx_z_xz/normal2,linewidth = lw_flx, arrowstyle = '->', density = 1.5, broken_streamlines = True, color ='w')
+# # ax[0].streamplot(x1_exp_half,x3_exp, (gas_flx_x_xz- vap_flx_x_xz)/normal2, (gas_flx_z_xz-vap_flx_z_xz)/normal2,linewidth = lw_flx4, arrowstyle = '->', density = 1.6, broken_streamlines = True, color ='white')
+# # ax[0].streamplot(x1_exp_half,x3_exp, vx_xz/normal, vz_xz/normal,linewidth = 0.75
+# #                 ,arrowstyle = '->', density = 2.0, broken_streamlines = True, color ='grey', norm = LogNorm(1.e-5,1.e-2,clip = True))
 
-# temperature
-ax1 = ax[1].pcolormesh(x_xz,y_xz,tem_xz,norm = Normalize(vmin = 100,vmax = 300,clip = True) ,cmap = 'coolwarm', alpha = 1)
-C_Tem = ax[1].contour(x_xz_c,y_xz_c,tem_xz,levels = linspace(150,200,11,endpoint=True), cmap = 'Greys_r', alpha = 1.0, linewidths = 1.0)
-C = ax[1].contour(x_xz_c,y_xz_c,tau_opt,levels = array([0.1,0.5,1.0,5.0]), colors = 'black', linestyles = 'dotted')
-# ax[1].annotate(r'$\tau_{R} = 0.1, 0.5, 1.0, 5.0$',xy = (2.0,0.14),xytext = (2.0,0.14),fontsize = 15)
+# # temperature
+# ax1 = ax[1].pcolormesh(x_xz,y_xz,tem_xz,norm = Normalize(vmin = 100,vmax = 300,clip = True) ,cmap = 'coolwarm', alpha = 1)
+# C_Tem = ax[1].contour(x_xz_c,y_xz_c,tem_xz,levels = linspace(150,200,11,endpoint=True), cmap = 'Greys_r', alpha = 1.0, linewidths = 1.0)
+# C = ax[1].contour(x_xz_c,y_xz_c,tau_opt,levels = array([0.1,0.5,1.0,5.0]), colors = 'black', linestyles = 'dotted')
+# # ax[1].annotate(r'$\tau_{R} = 0.1, 0.5, 1.0, 5.0$',xy = (2.0,0.14),xytext = (2.0,0.14),fontsize = 15)
 
-#===
-divider = make_axes_locatable(ax[0])
-cax = fig.add_axes([ax[0].get_position().x1+0.01,ax[0].get_position().y0,0.02,ax[0].get_position().height])
-cl0 = fig.colorbar(ax0,cax = cax)
-# cl0.set_ticks([0.01,0.03,0.05])
-# cl0.ax.set_title('St',fontsize=12)
-cl0.set_ticks([])
-cl0.ax.set_title(r'$\rho_{\mathrm{vap}}$',fontsize = 15)
-#===
-cax1 = fig.add_axes([ax[0].get_position().x1+0.055,ax[0].get_position().y0,0.02,ax[0].get_position().height])
-cl00 = fig.colorbar(ax00, cax = cax1,format = ticker.FuncFormatter(formatnum))
-cl00.set_ticks([])
-cl00.ax.set_title(r'$\rho_{\mathrm{ice}}$',fontsize = 15)
+# #===
+# divider = make_axes_locatable(ax[0])
+# cax = fig.add_axes([ax[0].get_position().x1+0.01,ax[0].get_position().y0,0.02,ax[0].get_position().height])
+# cl0 = fig.colorbar(ax0,cax = cax)
+# # cl0.set_ticks([0.01,0.03,0.05])
+# # cl0.ax.set_title('St',fontsize=12)
+# cl0.set_ticks([])
+# cl0.ax.set_title(r'$\rho_{\mathrm{vap}}$',fontsize = 15)
+# #===
+# cax1 = fig.add_axes([ax[0].get_position().x1+0.055,ax[0].get_position().y0,0.02,ax[0].get_position().height])
+# cl00 = fig.colorbar(ax00, cax = cax1,format = ticker.FuncFormatter(formatnum))
+# cl00.set_ticks([])
+# cl00.ax.set_title(r'$\rho_{\mathrm{ice}}$',fontsize = 15)
 
 
-cax11 = fig.add_axes([ax[0].get_position().x1+0.115,ax[0].get_position().y0,0.02,ax[0].get_position().height])
-cl000 = fig.colorbar(ax000, cax = cax11,format = ticker.FuncFormatter(formatnum))
-cl000.set_ticks(ticks = logspace(-2,0,3))
-cl000.ax.set_title(r'$\rho_{\mathrm{ice,small}}$',fontsize = 15)
-cl000.set_label(r'$\rho_{0}$', fontsize = 15)
+# cax11 = fig.add_axes([ax[0].get_position().x1+0.115,ax[0].get_position().y0,0.02,ax[0].get_position().height])
+# cl000 = fig.colorbar(ax000, cax = cax11,format = ticker.FuncFormatter(formatnum))
+# cl000.set_ticks(ticks = logspace(-2,0,3))
+# cl000.ax.set_title(r'$\rho_{\mathrm{ice,small}}$',fontsize = 15)
+# cl000.set_label(r'$\rho_{0}$', fontsize = 15)
 
-divider = make_axes_locatable(ax[1])
-cax = fig.add_axes([ax[1].get_position().x1+0.01,ax[1].get_position().y0,0.02,ax[1].get_position().height])
-cl1 = fig.colorbar(ax1,cax = cax)
-cl1.set_label(r'$T(\mathrm{K})$')
-cb_ymin, cb_ymax = cl1.ax.get_ylim()
-# Get colors from the contourf object
-# colors = C_Tem.get_array()
-plt.draw() # Force the figure to update and draw to get the colors
-colors = C_Tem.get_edgecolors()  # Get the edge colors of the contour lines
-# colors = C_Tem.colors
-# Define levels for the second contour (make sure these are within the range of Z1)
-second_contour_levels = C_Tem.levels
-# Add lines to the colorbar
-color_id = 0
-for level in second_contour_levels:
-    # Normalize level value to colorbar scale
-    fmax = ax1.get_clim()[1]
-    fmin = ax1.get_clim()[0]
-    norm_level = (level - fmin) / (fmax - fmin)
-    # Calculate y position on the colorbar
-    y = cb_ymin + norm_level * (cb_ymax - cb_ymin)
-    # Choose the color
-    color = colors[color_id]
-    color_id += 1
-    # Draw a horizontal line on the colorbar
-    cl1.ax.hlines(y, 0, 1, color=color, linewidth=2)
+# divider = make_axes_locatable(ax[1])
+# cax = fig.add_axes([ax[1].get_position().x1+0.01,ax[1].get_position().y0,0.02,ax[1].get_position().height])
+# cl1 = fig.colorbar(ax1,cax = cax)
+# cl1.set_label(r'$T(\mathrm{K})$')
+# cb_ymin, cb_ymax = cl1.ax.get_ylim()
+# # Get colors from the contourf object
+# # colors = C_Tem.get_array()
+# plt.draw() # Force the figure to update and draw to get the colors
+# colors = C_Tem.get_edgecolors()  # Get the edge colors of the contour lines
+# # colors = C_Tem.colors
+# # Define levels for the second contour (make sure these are within the range of Z1)
+# second_contour_levels = C_Tem.levels
+# # Add lines to the colorbar
+# color_id = 0
+# for level in second_contour_levels:
+#     # Normalize level value to colorbar scale
+#     fmax = ax1.get_clim()[1]
+#     fmin = ax1.get_clim()[0]
+#     norm_level = (level - fmin) / (fmax - fmin)
+#     # Calculate y position on the colorbar
+#     y = cb_ymin + norm_level * (cb_ymax - cb_ymin)
+#     # Choose the color
+#     color = colors[color_id]
+#     color_id += 1
+#     # Draw a horizontal line on the colorbar
+#     cl1.ax.hlines(y, 0, 1, color=color, linewidth=2)
 
-for i in range(len(list(ax))):
-    ax[i].set_xlim(R_inner,xs)
-    ax[i].set_ylim(0,zs)
-    # ax[i].set_aspect(1)
+# for i in range(len(list(ax))):
+#     ax[i].set_xlim(R_inner,xs)
+#     ax[i].set_ylim(0,zs)
+#     # ax[i].set_aspect(1)
 
-ax[0].set_ylabel('$z$ [au]',fontsize =15)
-ax[1].set_ylabel('$z$ [au]',fontsize =15)
-ax[1].set_xlabel('$r$ [au]',fontsize =15)
+# ax[0].set_ylabel('$z$ [au]',fontsize =15)
+# ax[1].set_ylabel('$z$ [au]',fontsize =15)
+# ax[1].set_xlabel('$r$ [au]',fontsize =15)
 
-plt.savefig('./plots/rho_xz_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
-plt.close()
-# #plot the relaxation timescale 
-# plt.figure(figsize=(9,4))
-# plt.contourf(x_xz_c,y_xz_c,t_relax[0].T,levels=100, alpha = 1., extend = 'both')
-# plt.colorbar()
-# import cgs
-# plt.axhline(3/tan(1.35416), ls='dotted', c= 'black', lw=1)
-# x = linspace(1,4,100)
-# upper_theta = x/tan(1.32708)
-# plt.plot(x, upper_theta, '--', c='black', lw=1)
-#
-# plt.contour(x_xz_c,y_xz_c,tau_opt,levels = array([0.1,0.5,1.0,5.0]), colors = 'black', linestyles = 'dotted')
-# plt.annotate(r'$\tau_{R} = 0.1, 0.5, 1.0, 5.0$',xy = (2.0,0.14),xytext = (2.0,0.14),fontsize = 15)
-# plt.savefig('./plots/relaxationtime.png',dpi=100)
-#
+# plt.savefig('./plots/rho_xz_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
 # plt.close()
+# # #plot the relaxation timescale 
+# # plt.figure(figsize=(9,4))
+# # plt.contourf(x_xz_c,y_xz_c,t_relax[0].T,levels=100, alpha = 1., extend = 'both')
+# # plt.colorbar()
+# # import cgs
+# # plt.axhline(3/tan(1.35416), ls='dotted', c= 'black', lw=1)
+# # x = linspace(1,4,100)
+# # upper_theta = x/tan(1.32708)
+# # plt.plot(x, upper_theta, '--', c='black', lw=1)
+# #
+# # plt.contour(x_xz_c,y_xz_c,tau_opt,levels = array([0.1,0.5,1.0,5.0]), colors = 'black', linestyles = 'dotted')
+# # plt.annotate(r'$\tau_{R} = 0.1, 0.5, 1.0, 5.0$',xy = (2.0,0.14),xytext = (2.0,0.14),fontsize = 15)
+# # plt.savefig('./plots/relaxationtime.png',dpi=100)
+# #
+# # plt.close()
 
-def normalize(arr):
-    norm = empty_like(arr)
-    for i in range(len(arr)):
-        norm[i] = arr[i]/arr[i].max()
+# def normalize(arr):
+#     norm = empty_like(arr)
+#     for i in range(len(arr)):
+#         norm[i] = arr[i]/arr[i].max()
 
-    return norm
-#plot the rho**2/tem**3 
-# aaa = rho_xz**2/tem_xz**3
-aaa = 1 - normalize(q_z_xz) 
-theta1 = x/tan(theta[8])
-theta2 = x/tan(theta[7])
-theta3 = x/tan(theta[9])
+#     return norm
+# #plot the rho**2/tem**3 
+# # aaa = rho_xz**2/tem_xz**3
+# aaa = 1 - normalize(q_z_xz) 
+# theta1 = x/tan(theta[8])
+# theta2 = x/tan(theta[7])
+# theta3 = x/tan(theta[9])
 
-# plt.figure(figsize=(9,4))
-# plt.plot(x, theta1, '--', c='black', lw=1)
-# plt.plot(x, theta2, '--', c='black', lw=1)
-# plt.plot(x, theta3, '--', c='black', lw=1)
-# plt.contourf(x_xz_c,y_xz_c,aaa,levels=100, alpha = 1., extend = 'both')
-# plt.colorbar()
-#
-# plt.contour(x_xz_c,y_xz_c,tau_opt,levels = array([0.1,0.5,1.0,5.0]), colors = 'black', linestyles = 'dotted')
-# plt.annotate(r'$\tau_{R} = 0.1, 0.5, 1.0, 5.0$',xy = (2.0,0.14),xytext = (2.0,0.14),fontsize = 15)
-# plt.savefig('./plots/dependence.png',dpi=100)
-#
+# # plt.figure(figsize=(9,4))
+# # plt.plot(x, theta1, '--', c='black', lw=1)
+# # plt.plot(x, theta2, '--', c='black', lw=1)
+# # plt.plot(x, theta3, '--', c='black', lw=1)
+# # plt.contourf(x_xz_c,y_xz_c,aaa,levels=100, alpha = 1., extend = 'both')
+# # plt.colorbar()
+# #
+# # plt.contour(x_xz_c,y_xz_c,tau_opt,levels = array([0.1,0.5,1.0,5.0]), colors = 'black', linestyles = 'dotted')
+# # plt.annotate(r'$\tau_{R} = 0.1, 0.5, 1.0, 5.0$',xy = (2.0,0.14),xytext = (2.0,0.14),fontsize = 15)
+# # plt.savefig('./plots/dependence.png',dpi=100)
+# #
+# # plt.close()
+
+# #plot the stokes number here 
+
+# idx_H1L = []
+# for i in range(len(rad)):
+#     idx_H1L.append(abs(z[0].T[i] - H_profile(rad[i])/AU).argmin())
+# idx_H1L = array(idx_H1L)
+
+# # st_xz = st[index_phi, :, :].T 
+# st1_xz = st1[index_phi, :, :].T 
+# st_xz[st_xz==1e-4] = nan
+# st_xz[st_xz==0.5] = nan 
+# st1_xz[st1_xz==1e-4] = nan
+# st1_xz[st1_xz==0.5] = nan
+# # # m_p_xz = m_p[index_phi, :, :].T 
+# # # m_p1_xz = m_p1[index_phi, :, :].T 
+# # fig,axs = plt.subplots(nrows = 2, ncols = 1,figsize = (9,6), sharex=True)
+# #
+# # ax1 = axs[0].contourf (x_xz_c, y_xz_c, st_xz, cmap='Blues',alpha=1, norm=LogNorm(vmin=1e-4,vmax=0.5))
+# # c1 = fig.colorbar(ax1) 
+# # ax2 = axs[1].contourf (x_xz_c, y_xz_c, st1_xz, cmap ='Greens', alpha=1, norm=LogNorm(vmin=1e-4,vmax=0.5))
+# # c2 = fig.colorbar(ax2)
+# #
+# # # c2.set_ticks([])
+# # c1.ax.set_title(r'$St_{large}$', fontsize=15)
+# # c2.ax.set_title(r'$St_{small}$', fontsize=15)
+# #
+# # plt.savefig('./plots/stokesnumber.png', bbox_inches ='tight')
+# # plt.close()
+
+# s_p1_xz = s_p1[index_phi, :, :].T
+# s_p_xz_1H = s_p_xz[range(len(rad)), idx_H1L]
+# s_p1_xz_1H = s_p1_xz[range(len(rad)), idx_H1L]
+
+# #plot the profile or pebble size at midplane 
+# plt.figure(figsize=(9,6))
+# plt.yscale('log')
+# plt.plot(rad, s_p_xz.T[-1], color = 'blue', label = 'large midplane') 
+# plt.plot(rad, s_p_xz_1H , color = 'cyan', ls='--', label = 'large 1H')
+# plt.plot(rad, s_p_xz.T[13], color = 'lightblue', label = 'large upper layer')
+# plt.plot(rad, s_p1_xz.T[-1], color = 'red', label = 'small midplane') 
+# plt.plot(rad, s_p1_xz_1H , color = 'orange', ls='--', label = 'small 1H') 
+# plt.plot(rad, s_p1_xz.T[13], color = 'yellow', label = 'large upper layer')
+# plt.xlabel('r [au]') 
+# plt.ylabel('particle size [cm]') 
+# # plt.plot(rad, st_xz.T[-20], label = 'mid-height large particle Stokes number')
+# # plt.plot(xx_exp, st_intpl[0], label = '0')
+# # plt.plot(xx_exp, st_intpl[30], label = '30')
+# # plt.plot(xx_exp, st_intpl[25], label = '25')
+# # plt.plot(xx_exp, st_intpl[20], label = '20')
+# # plt.plot(xx_exp, st_intpl[10], label = '10')
+# # plt.plot(xx_exp, st_intpl[5], label = '5')
+
+# plt.legend(loc = 'upper right')
+# plt.savefig('./plots/sp_profile_{:05d}.png'.format(int(filenum)), dpi = 300)
 # plt.close()
-
-#plot the stokes number here 
-
-idx_H1L = []
-for i in range(len(rad)):
-    idx_H1L.append(abs(z[0].T[i] - H_profile(rad[i])/AU).argmin())
-idx_H1L = array(idx_H1L)
-
-# st_xz = st[index_phi, :, :].T 
-st1_xz = st1[index_phi, :, :].T 
-st_xz[st_xz==1e-4] = nan
-st_xz[st_xz==0.5] = nan 
-st1_xz[st1_xz==1e-4] = nan
-st1_xz[st1_xz==0.5] = nan
-# # m_p_xz = m_p[index_phi, :, :].T 
-# # m_p1_xz = m_p1[index_phi, :, :].T 
-# fig,axs = plt.subplots(nrows = 2, ncols = 1,figsize = (9,6), sharex=True)
-#
-# ax1 = axs[0].contourf (x_xz_c, y_xz_c, st_xz, cmap='Blues',alpha=1, norm=LogNorm(vmin=1e-4,vmax=0.5))
-# c1 = fig.colorbar(ax1) 
-# ax2 = axs[1].contourf (x_xz_c, y_xz_c, st1_xz, cmap ='Greens', alpha=1, norm=LogNorm(vmin=1e-4,vmax=0.5))
-# c2 = fig.colorbar(ax2)
-#
-# # c2.set_ticks([])
-# c1.ax.set_title(r'$St_{large}$', fontsize=15)
-# c2.ax.set_title(r'$St_{small}$', fontsize=15)
-#
-# plt.savefig('./plots/stokesnumber.png', bbox_inches ='tight')
-# plt.close()
-
-s_p1_xz = s_p1[index_phi, :, :].T
-s_p_xz_1H = s_p_xz[range(len(rad)), idx_H1L]
-s_p1_xz_1H = s_p1_xz[range(len(rad)), idx_H1L]
-
-#plot the profile or pebble size at midplane 
-plt.figure(figsize=(9,6))
-plt.yscale('log')
-plt.plot(rad, s_p_xz.T[-1], color = 'blue', label = 'large midplane') 
-plt.plot(rad, s_p_xz_1H , color = 'cyan', ls='--', label = 'large 1H')
-plt.plot(rad, s_p_xz.T[13], color = 'lightblue', label = 'large upper layer')
-plt.plot(rad, s_p1_xz.T[-1], color = 'red', label = 'small midplane') 
-plt.plot(rad, s_p1_xz_1H , color = 'orange', ls='--', label = 'small 1H') 
-plt.plot(rad, s_p1_xz.T[13], color = 'yellow', label = 'large upper layer')
-plt.xlabel('r [au]') 
-plt.ylabel('particle size [cm]') 
-# plt.plot(rad, st_xz.T[-20], label = 'mid-height large particle Stokes number')
-# plt.plot(xx_exp, st_intpl[0], label = '0')
-# plt.plot(xx_exp, st_intpl[30], label = '30')
-# plt.plot(xx_exp, st_intpl[25], label = '25')
-# plt.plot(xx_exp, st_intpl[20], label = '20')
-# plt.plot(xx_exp, st_intpl[10], label = '10')
-# plt.plot(xx_exp, st_intpl[5], label = '5')
-
-plt.legend(loc = 'upper right')
-plt.savefig('./plots/sp_profile_{:05d}.png'.format(int(filenum)), dpi = 300)
-plt.close()
 
 # fig,axs = plt.subplots(nrows = 2, ncols = 1,figsize = (9,6), sharex=True)
 # # st_xz = st[index_phi, :, :].T 
@@ -2239,7 +2239,7 @@ n_p1_xz = (dust_3_rho_xz + dust_4_rho_xz)/m_p1_xz
 # plt.close()
 
 #plot the drho_i for large and small pebbles 
-if drho_exist:
+if False:
     dlogmdt_large = drho_i_dt_xz/n_p_xz/m_p_xz 
     dlogmdt_small = drho_i1_dt_xz/n_p1_xz/m_p1_xz
 
