@@ -1852,9 +1852,10 @@ ax[2].plot(xx_exp,flux_ice_face*1e8, lw =lwD['si'],color='darkblue', alpha = alp
 ax[2].plot(xx_exp,flux_ice1_face*1e8,lw =lwD['li'],color='darkblue', alpha = alpD['li'], label = r'$\mathcal{F}_{\mathrm{ice, big}}$')
 ax[2].plot(xx_exp,flux_sil_face*1e8, lw =lwD['ss'],color=colD['ss'], alpha = alpD['ss'], label = r'$\mathcal{F}_{\mathrm{sil, small}}$')
 ax[2].plot(xx_exp,flux_sil1_face*1e8,lw =lwD['ls'],color=colD['ls'], alpha = alpD['ls'], label = r'$\mathcal{F}_{\mathrm{sil, big}}$')
+ax[2].plot(xx_exp,(flux_sil_face + flux_sil1_face)*1e8,lw =lwD['ls'],color=colD['ls'], alpha = alpD['ls'], label = r'$\mathcal{F}_{\mathrm{sil, big}}$')
 
 ax[2].plot(xx_exp,flux_vap_face*1e8,  lw =lwD['va'],color=colD['va'], alpha = alpD['va'], label = r'$\mathcal{F}_{\mathrm{vap}}$')
-ax[2].plot(xx_exp,flux_water_face/xx_exp*1e8,lw =3,color='cyan', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
+ax[2].plot(xx_exp,flux_water_face*1e8,lw =3,color='cyan', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
 ax[2].plot(xx_exp,flux_gas_face*1e8,lw =3,color='grey', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{xy}}$')
 
 # ax[2].plot(rad, flux_ice_faced*1e8, lw =lwD['si'],color='darkblue', alpha = alpD['si'], ls = '--')
