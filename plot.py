@@ -757,14 +757,14 @@ singlepop = sys.argv[2] == 'single_pop'
 # plt.savefig('./plots/vfrag_time.png', dpi = 300, bbox_inches='tight')
 # plt.close()
 
-fig, ax = plt.subplots(figsize=(10, 7))
-ax.set_ylim(-0.35, 0.35)
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.set_ylim(0, 0.25)
 ax.set_xlim(rin/L_norm, 3)
 
 crhov =  ax.contourf(x_xz_c,y_xz_c,dust_5_rho_xz*UNIT_DEN,levels = logspace(-19,-9,10), norm = LogNorm(), cmap = 'Greys', alpha = 1.0, extend = 'both',zorder=3, antialiased = True)
-ax.contourf(x_xz_c,-y_xz_c,dust_5_rho_xz*UNIT_DEN,levels = logspace(-19,-9,10), norm = LogNorm(), cmap = 'Greys', alpha = 1.0, extend = 'both',zorder=3, antialiased = True)
+# ax.contourf(x_xz_c,-y_xz_c,dust_5_rho_xz*UNIT_DEN,levels = logspace(-19,-9,10), norm = LogNorm(), cmap = 'Greys', alpha = 1.0, extend = 'both',zorder=3, antialiased = True)
 colors = ['white', 'skyblue', 'deepskyblue', 'dodgerblue', 'blue', 'darkblue']
-crho1= ax.contourf(x_xz_c,y_xz_c,(dust_1_rho_mod)/rho_xz,levels = logspace(log10(0.05), log10(1.25),5), norm = LogNorm(), antialiased = True, 
+crho1= ax.contourf(x_xz_c,y_xz_c,(dust_1_rho_mod + dust_3_rho_mod)*UNIT_DEN,levels = logspace(log10(1e-14), log10(1e-10),5), norm = LogNorm(), antialiased = True, 
                    colors = colors, alpha = 0.7, extend = 'both',zorder=4)
 crho1= ax.contourf(x_xz_c,-y_xz_c,(dust_3_rho_mod)/rho_xz,levels = logspace(log10(0.05), log10(1.25),5), norm = LogNorm(), antialiased = True, 
                    colors = colors, alpha = 0.7, extend = 'both',zorder=4)
@@ -777,8 +777,8 @@ cbarv.set_ticks(logspace(-20,-10,6))
 cbarv.set_ticklabels([r'$10^{-20}$',r'$10^{-18}$',r'$10^{-16}$',r'$10^{-14}$',r'$10^{-12}$',r'$10^{-10}$'], fontsize = 10)
 cbar1 = fig.colorbar(crho1, ax = ax, orientation = 'vertical',pad = -0.15, shrink = 0.3, aspect = 12, anchor=(0, 0.5))
 cbar1.ax.set_ylabel(r'$\rho_{ice}/\rho_{gas}$', fontsize = 12)
-cbar1.set_ticks([0.1, 0.3, 1])
-cbar1.set_ticklabels(['0.1', '0.3', '1'], fontsize = 10)
+# cbar1.set_ticks([0.1, 0.3, 1])
+# cbar1.set_ticklabels(['0.1', '0.3', '1'], fontsize = 10)
 
 # overplot vapor colored by temperature region (contourf)
 vap_rho = dust_5_rho_xz * UNIT_DEN
@@ -1852,7 +1852,7 @@ ax[2].plot(xx_exp,flux_ice_face*1e8, lw =lwD['si'],color='darkblue', alpha = alp
 ax[2].plot(xx_exp,flux_ice1_face*1e8,lw =lwD['li'],color='darkblue', alpha = alpD['li'], label = r'$\mathcal{F}_{\mathrm{ice, big}}$')
 ax[2].plot(xx_exp,flux_sil_face*1e8, lw =lwD['ss'],color=colD['ss'], alpha = alpD['ss'], label = r'$\mathcal{F}_{\mathrm{sil, small}}$')
 ax[2].plot(xx_exp,flux_sil1_face*1e8,lw =lwD['ls'],color=colD['ls'], alpha = alpD['ls'], label = r'$\mathcal{F}_{\mathrm{sil, big}}$')
-ax[2].plot(xx_exp,(flux_sil_face + flux_sil1_face)*1e8,lw =lwD['ls'],color=colD['ls'], alpha = alpD['ls'], label = r'$\mathcal{F}_{\mathrm{sil, big}}$')
+ax[2].plot(xx_exp,(flux_sil_face + flux_sil1_face)*1e8,lw =lwD['ls'],color='orange', alpha = 1, label = r'$\mathcal{F}_{\mathrm{sil, tot}}$')
 
 ax[2].plot(xx_exp,flux_vap_face*1e8,  lw =lwD['va'],color=colD['va'], alpha = alpD['va'], label = r'$\mathcal{F}_{\mathrm{vap}}$')
 ax[2].plot(xx_exp,flux_water_face*1e8,lw =3,color='cyan', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
