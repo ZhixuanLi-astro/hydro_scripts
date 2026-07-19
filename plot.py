@@ -642,10 +642,6 @@ for j in range(len(zz_exp)):
             flux_vap_z_intpl[j,i] = 0.0
             flux_gas_x_intpl[j,i] = 0.0
             flux_gas_z_intpl[j,i] = 0.0 
-            flux_ice_x_intpl[j,i] = 0.0 
-            flux_ice1_x_intpl[j,i] = 0.0 
-            flux_sil_x_intpl[j,i] = 0.0 
-            flux_sil1_x_intpl[j,i] = 0.0
             st_intpl[j,i] = 0.0 
             st1_intpl[j,i] = 0.0
 
@@ -764,10 +760,10 @@ ax.set_xlim(rin/L_norm, 3)
 crhov =  ax.contourf(x_xz_c,y_xz_c,dust_5_rho_xz*UNIT_DEN,levels = logspace(-19,-9,10), norm = LogNorm(), cmap = 'Greys', alpha = 1.0, extend = 'both',zorder=3, antialiased = True)
 # ax.contourf(x_xz_c,-y_xz_c,dust_5_rho_xz*UNIT_DEN,levels = logspace(-19,-9,10), norm = LogNorm(), cmap = 'Greys', alpha = 1.0, extend = 'both',zorder=3, antialiased = True)
 colors = ['white', 'skyblue', 'deepskyblue', 'dodgerblue', 'blue', 'darkblue']
-crho1= ax.contourf(x_xz_c,y_xz_c,(dust_1_rho_mod + dust_3_rho_mod)*UNIT_DEN,levels = logspace(log10(1e-14), log10(1e-10),5), norm = LogNorm(), antialiased = True, 
+crho1= ax.contourf(x_xz_c,y_xz_c,(dust_1_rho_mod)/rho_xz,levels = logspace(log10(0.01), log10(0.1),7), norm = LogNorm(), antialiased = True, 
                    colors = colors, alpha = 0.7, extend = 'both',zorder=4)
-crho1= ax.contourf(x_xz_c,-y_xz_c,(dust_3_rho_mod)/rho_xz,levels = logspace(log10(0.05), log10(1.25),5), norm = LogNorm(), antialiased = True, 
-                   colors = colors, alpha = 0.7, extend = 'both',zorder=4)
+# crho1= ax.contourf(x_xz_c,-y_xz_c,(dust_3_rho_mod)/rho_xz,levels = logspace(log10(0.05), log10(1.25),5), norm = LogNorm(), antialiased = True, 
+#                    colors = colors, alpha = 0.7, extend = 'both',zorder=4)
 # ax0 =  ax.contourf(x_xz_c,-y_xz_c,dust_5_rho_mod,levels = logspace(log10(d2g_snow),log10(1.0),25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
 # ax00 = ax.contourf(x_xz_c,-y_xz_c,dust_1_rho_mod,levels = logspace(log10(d2g_snow),log10(0.3),20), norm = LogNorm(), cmap = 'Blues', alpha = 1, extend = 'both', antialiased=True, zorder=4)
 cbarv = fig.colorbar(crhov, ax = ax, orientation = 'vertical',pad = -0.15, shrink = 0.3, aspect = 12, anchor=(0, 1))
@@ -775,6 +771,7 @@ cbarv = fig.colorbar(crhov, ax = ax, orientation = 'vertical',pad = -0.15, shrin
 cbarv.ax.set_ylabel(r'$\rho_{vap}$ [g cm$^{-3}$]', fontsize = 12)
 cbarv.set_ticks(logspace(-20,-10,6))
 cbarv.set_ticklabels([r'$10^{-20}$',r'$10^{-18}$',r'$10^{-16}$',r'$10^{-14}$',r'$10^{-12}$',r'$10^{-10}$'], fontsize = 10)
+
 cbar1 = fig.colorbar(crho1, ax = ax, orientation = 'vertical',pad = -0.15, shrink = 0.3, aspect = 12, anchor=(0, 0.5))
 cbar1.ax.set_ylabel(r'$\rho_{ice}/\rho_{gas}$', fontsize = 12)
 # cbar1.set_ticks([0.1, 0.3, 1])
@@ -851,9 +848,9 @@ def _mass_threshold(mass_map, rho_map, thres=0.99):
             return density
     return cells[-1][0]
 
-threshold_cold = _mass_threshold(m_cold_M, vap_rho)
-threshold_warm = _mass_threshold(m_warm_M, vap_rho)
-threshold_hot  = _mass_threshold(m_hot_M,  vap_rho, thres = 1.0)
+threshold_cold = _mass_threshold(m_cold_M, vap_rho, thres = 0.999)
+threshold_warm = _mass_threshold(m_warm_M, vap_rho, thres = 0.9)
+threshold_hot  = _mass_threshold(m_hot_M,  vap_rho, thres = 0.9)
 
 # mask vapor to only the densest cells accounting for 90% of each region's mass
 vap_cold_90 = ma.masked_where(~((tau_ir < 1.0) & (vap_cold > 0) & (vap_rho >= threshold_cold)), vap_rho)
@@ -1386,7 +1383,7 @@ axs[0,0].legend(handles=legend_handles, loc='upper right', ncol=3, frameon=False
 # density 
 ticks = logspace(-12, -1, 5)
 axs[1,0].set_ylabel(r'$z$ [AU]', fontsize = 12)
-axs[1,0].set_ylim(-0.25, 0.25)
+axs[1,0].set_ylim(-0.15, 0.15)
 axs[1,0].set_xlim(rin/L_norm, rout/L_norm)
 legends = [Line2D([0], [0], color='k', lw=2, marker = '>', label=r'$10^{-3}~\rho_{0}c_{\mathrm{s,0}}$'),
            Line2D([0], [0], color='k', ls = '--', lw=1, label=r'$H_{peb}$')]
@@ -1465,14 +1462,14 @@ cbarvap.ax.set_title(r'$\rho_{\mathrm{vap}} [g/cm^3]$', fontsize = 12)
 axs[0,1].set_xlabel(r'$R$ [AU]', fontsize = 12)
 axs[0,1].set_ylabel(r'$z$ [AU]', fontsize = 12)
 axs[0,1].set_xlim(rin/L_norm, rout/L_norm)
-axs[0,1].set_ylim(-0.25, 0.25)
+axs[0,1].set_ylim(-0.15, 0.15)
 # axs[1,2].plot(rad, H_profile(rad)/AU, '--', c='gray', lw=1)
 # axs[1,2].plot(rad, -H_profile(rad)/AU, '--', c='gray', lw=1)
 axs[0,1].plot(xx_exp, -yy1, '--', c='k', lw=1, zorder=10)
 axs[0,1].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10)
 
 
-c1 = axs[0,1].contourf(x_xz_c, y_xz_c, m_p1_xz, levels = logspace(-17, 2, 31), norm = LogNorm(),cmap = 'Purples', alpha = 1.0,extend = 'both')
+c1 = axs[0,1].contourf(x_xz_c, y_xz_c, m_p1_xz, levels = logspace(-12, 2.5, 31), norm = LogNorm(),cmap = 'Purples', alpha = 1.0,extend = 'both')
 axs[0,1].contour(x_xz_c, -y_xz_c, watercomp1, levels = [0.5], colors = 'k', linewidths = 2.0)
 axs[0,1].contourf(x_xz_c, -y_xz_c, watercomp1, levels = linspace(0.4,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
 cbar0 = fig.colorbar(c1, ax=axs[0,1], location = 'right', shrink = 0.8, pad = 0.04, anchor=(0,0))
@@ -1487,9 +1484,9 @@ axs[1,1].plot(xx_exp, -yy0, '--', c='k', lw=1, zorder=10)
 axs[1,1].plot(xx_exp, yy0, '--', c='k', lw=1, zorder=10)
 # axs[1,2].plot(rad, H_profile(rad)/AU, '--', c='gray', lw=1)
 axs[1,1].set_xlabel(r'$R$ [AU]', fontsize = 12)
-axs[1,1].set_ylim(-0.25, 0.25)
+axs[1,1].set_ylim(-0.15, 0.15)
 axs[1,1].set_ylabel(r'$z$ [AU]', fontsize = 12)
-c0 = axs[1,1].contourf(x_xz_c, y_xz_c,m_p_xz, levels = logspace(-12, -1, 21), norm = LogNorm(), cmap = 'Purples', alpha = 1.0,extend = 'both')
+c0 = axs[1,1].contourf(x_xz_c, y_xz_c,m_p_xz, levels = logspace(-12, 2.5, 21), norm = LogNorm(), cmap = 'Purples', alpha = 1.0,extend = 'both')
 ccomp0 = axs[1,1].contourf(x_xz_c, -y_xz_c, watercomp0, levels = linspace(0.4,0.7,21), cmap = 'Blues', alpha = 0.8,extend = 'both')
 #also plot the 1/2 line 
 axs[1,1].contour(x_xz_c, -y_xz_c, watercomp0, levels = [0.5], colors = 'k', linewidths = 2.0)
@@ -1847,7 +1844,7 @@ for i in range(1, N_P*N_Z + 1):
     p2g_flux_inp.append(athinputs['dust'][kk])
 
 ax[2].set_yscale('symlog', linthresh = 1e-2)
-ax[2].axhline(-0.2, c= 'k', ls='--')
+ax[2].axhline(-0.1, c= 'k', ls='--')
 ax[2].plot(xx_exp,flux_ice_face*1e8, lw =lwD['si'],color='darkblue', alpha = alpD['si'], label = r'$\mathcal{F}_{\mathrm{ice, small}}$')
 ax[2].plot(xx_exp,flux_ice1_face*1e8,lw =lwD['li'],color='darkblue', alpha = alpD['li'], label = r'$\mathcal{F}_{\mathrm{ice, big}}$')
 ax[2].plot(xx_exp,flux_sil_face*1e8, lw =lwD['ss'],color=colD['ss'], alpha = alpD['ss'], label = r'$\mathcal{F}_{\mathrm{sil, small}}$')

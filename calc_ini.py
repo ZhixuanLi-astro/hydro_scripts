@@ -2,6 +2,7 @@ import numpy as np
 import cgs
 from preplot import read_athinput
 import sys
+import re
 
 try: 
     filenum = sys.argv[1]
@@ -93,10 +94,73 @@ def get_tem(rad, T0, q, r0):
     Tem = T0 * (rad/r0)**(-q)
     return Tem
 
+def write_athinput_dust(inputfile, m0, m1, St0, St1, Hratio0, Hratio1):
+    """
+    Write calculated dust initial conditions into the <dust> block of an athinput file.
+
+    Each population (small=0, large=1) shares the same properties across ice & silicate
+    species because grains are assumed to be 50% ice + 50% silicate.
+
+    Parameters
+    ----------
+    inputfile : str
+        Path to the athinput file to modify (in-place).
+    m0, m1 : float
+        Characteristic mass [g] for small and large populations.
+    St0, St1 : float
+        Stokes numbers for small and large populations.
+    Hratio0, Hratio1 : float
+        Hd/Hg scale-height ratios for small and large populations.
+    """
+    with open(inputfile, 'r') as f:
+        content = f.read()
+
+    replacements = [
+        # Species 1: small ice  ─┐ same small-pop values
+        (r'(Stokes_number_1\s*=\s*)[\d.eE+\-]+', rf'\g<1>{St0:.6g}'),
+        (r'(Hratio_1\s*=\s*)[\d.eE+\-]+',        rf'\g<1>{Hratio0:.6g}'),
+        (r'(m_p0_1\s*=\s*)[\d.eE+\-]+',           rf'\g<1>{m0:.6g}'),
+        # Species 2: small silicate ─┘
+        (r'(Stokes_number_2\s*=\s*)[\d.eE+\-]+', rf'\g<1>{St0:.6g}'),
+        (r'(Hratio_2\s*=\s*)[\d.eE+\-]+',        rf'\g<1>{Hratio0:.6g}'),
+        (r'(m_p0_2\s*=\s*)[\d.eE+\-]+',           rf'\g<1>{m0:.6g}'),
+        # Species 3: large ice  ─┐ same large-pop values
+        (r'(Stokes_number_3\s*=\s*)[\d.eE+\-]+', rf'\g<1>{St1:.6g}'),
+        (r'(Hratio_3\s*=\s*)[\d.eE+\-]+',        rf'\g<1>{Hratio1:.6g}'),
+        (r'(m_p0_3\s*=\s*)[\d.eE+\-]+',           rf'\g<1>{m1:.6g}'),
+        # Species 4: large silicate ─┘
+        (r'(Stokes_number_4\s*=\s*)[\d.eE+\-]+', rf'\g<1>{St1:.6g}'),
+        (r'(Hratio_4\s*=\s*)[\d.eE+\-]+',        rf'\g<1>{Hratio1:.6g}'),
+        (r'(m_p0_4\s*=\s*)[\d.eE+\-]+',           rf'\g<1>{m1:.6g}'),
+    ]
+
+    for pattern, replacement in replacements:
+        content = re.sub(pattern, replacement, content)
+
+    with open(inputfile, 'w') as f:
+        f.write(content)
+
+    print(f"[write_athinput_dust] Updated species 1-4 in {inputfile}")
 
 if __name__ == "__main__":
-    rhoint = get_rhoint(0.50, 0.50, 1.0, 3.0)
     alpha = athinputs['problem']['alpha_vis']
     Tem = get_tem(rout, T0, -q_value, 3.0)
-    v_frag = 1000 
+    v_frag = 1200
+
+    # combined internal density: 50% ice + 50% silicate
+    rhoint = get_rhoint(0.50, 0.50,
+                        athinputs['problem']['rho_ice_inter'],
+                        athinputs['problem']['rho_sil_inter'])
+    print("\n=== Combined grains (rhoint = {:.2f} g/cm^3) ===".format(rhoint))
     m0, m1, St0, St1, Hd0, Hd1 = calc_ini(rhoint, v_frag, Tem, alpha, rout, Mstar)
+
+    # Hratio = Hd / Hg  (calc_ini returns absolute Hd; recompute Hg for the ratio)
+    mu_xy = 2.34
+    cs2_ref = cgs.kB * Tem / cgs.mp / mu_xy
+    OmegaK_ref = np.sqrt(cgs.gC * Mstar * cgs.Msun / (rout * cgs.au)**3)
+    Hg_ref = np.sqrt(cs2_ref) / OmegaK_ref
+    Hratio0 = Hd0 / Hg_ref
+    Hratio1 = Hd1 / Hg_ref
+
+    # --- write to input file ---
+    write_athinput_dust(inputfile, m0, m1, St0, St1, Hratio0, Hratio1)
