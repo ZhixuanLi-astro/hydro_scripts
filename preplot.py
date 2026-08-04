@@ -437,4 +437,210 @@ def read_athinput(filename):
                     pass
 
     return config
-        
+
+
+# import matplotlib.gridspec as gs
+# fig = plt.figure(figsize=(18, 12), constrained_layout=True)
+# grid = gs.GridSpec(2, 2, figure=fig, hspace=0.0)
+# axs = empty((2, 2), dtype=object) 
+# axs[0, 0] = fig.add_subplot(grid[0, 0])
+# axs[0, 1] = fig.add_subplot(grid[0, 1])
+# axs[1, 0] = fig.add_subplot(grid[1, 0])
+# axs[1, 1] = fig.add_subplot(grid[1, 1])
+#
+# xin = 0.6 
+# xout = 2.5 
+# yin = -0.1 
+# yout = 0.1 
+# for ax in axs.flatten():
+#     ax.set_xlim(xin, xout)
+#     ax.set_ylim(yin, yout)
+#
+# axs[0,1].set_title("time: {:.2f} yr".format(simu_time*UNIT_T/YR),loc= 'right', y=1.05)
+#
+# axs[0,0].set_ylabel(r'$\Sigma$ [g/cm$^2$]', fontsize = 12)
+#
+# # axs[0,0].set_yscale('log')
+# axs[0,0].set_ylim(1e-2, 200)
+# # sax[0].plot(xx_exp,(sigma_gas-sigma_vap)*0.4, color = 'k', alpha = 1.0, label = '$ f_{\mathrm{i/g}} \Sigma_{\mathrm{xy}}$')
+# # shere the 0.4 is from the 0.8/2, in which 0.8 is the dust-to-gas flux ratio, so the vapor should be the half of it
+# axs[0,0].plot(xx_exp,(sigma_gas)*0.4, color = 'k', linestyle='-', alpha = 1.0, label = 'gas')
+# axs[0,0].plot(xx_exp,sqrt(2*pi)*0.4*(xx_exp/3)**(-1)*UNIT_SIGMA,color = 'grey',linewidth = 5, alpha = 0.5)
+# ice_style = [('si', 'ice {}'), ('li', 'ice {}')]
+# sil_style = [('ss', 'silicate {}'), ('ls', 'silicate {}')]
+# for p in range(len(sigma_ice_by_pop)):
+#     i_style = p if p < len(ice_style) else len(ice_style)-1
+#     key = ice_style[i_style][0]
+#     axs[0,0].plot(xx_exp, sigma_ice_by_pop[p], c = colD[key], lw = lwD[key], label = ice_style[i_style][1].format(p))
+# for p in range(len(sigma_sil_by_pop)):
+#     i_style = p if p < len(sil_style) else len(sil_style)-1
+#     key = sil_style[i_style][0]
+#     axs[0,0].plot(xx_exp, sigma_sil_by_pop[p], c = colD[key], lw = lwD[key], label = sil_style[i_style][1].format(p))
+# axs[0,0].plot(xx_exp, sigma_vap , c = colD['va'], lw = lwD['va'], label = 'vapor') 
+# axs[0,0].legend(handles=legend_handles, loc='upper right', ncol=3, frameon=False, fontsize=15)
+# # density 
+# ticks = logspace(-8, 3, 5)
+# axs[1,0].set_ylabel(r'$z$ [AU]', fontsize = 12)
+# legends = [Line2D([0], [0], color='darkblue', lw=6, alpha=0.7,label=r'$\rho_{ice}/\rho_{g} = 10^{-3}$'),
+#            Line2D([0], [0], color='k', ls = '--', lw=1, label=r'$H_{peb}$')]
+# axs[1,0].legend(handles=legends, loc='upper right',fontsize = 15, framealpha = 0.6)
+# # the vapor
+# ax0 =  axs[1,0].contourf(x_xz_c,y_xz_c,dust_5_rho_mod*UNIT_DEN,levels = logspace(-14, -10,15), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
+# axs[1,0].contourf(x_xz_c,-y_xz_c,dust_5_rho_mod*UNIT_DEN,levels = logspace(-14, -10,15), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
+#
+# crho1= axs[1,0].contourf(x_xz_c,y_xz_c,dust_3_rho_mod*UNIT_DEN,levels = logspace(-14, log10(3e-11),20), norm = LogNorm(), cmap = 'Blues', alpha = 1.0, extend = 'both', antialiased = True,zorder=4)
+# axs[1,0].contourf(x_xz_c,-y_xz_c,dust_1_rho_mod*UNIT_DEN,levels = logspace(-14,log10(3e-11),20), norm = LogNorm(), cmap = 'Blues', alpha = 1, extend = 'both', antialiased=True, zorder=4)
+#
+# axs[1,0].axhline(0.0, c= 'k', ls='-',linewidth = 4., zorder=15)
+# # axs[1,0].contour(x_xz_c,y_xz_c,tau_ir,levels = array([0.5,1.0]), colors = 'black', linestyles = 'dotted', zorder = 20)
+# # axs[1,0].contour(x_xz_c,-y_xz_c,tau_ir,levels = array([0.5,1.0]), colors = 'black', linestyles = 'dotted', zorder = 20)
+# axs[1,0].plot(xx_exp, -yy0, '--', c='k', lw=1, zorder=10)
+# # axs[1,0].plot(xx_exp, yy_g, '-', c='r', lw=1, zorder=10)
+# axs[1,0].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10)
+# #zxl: 0his we change to the sum of the ice in different populations.
+# ice_rho_xz_tot = dust_1_rho_xz + dust_3_rho_xz
+# axs[1,0].contour(x_xz_c,y_xz_c, dust_3_rho_xz/rho_xz,levels = [d2g_snow], colors='darkblue', alpha = 0.7, linewidths = 5.0, zorder = 5)
+# axs[1,0].contour(x_xz_c,-y_xz_c, dust_1_rho_xz/rho_xz,levels = [d2g_snow],colors='darkblue', alpha = 0.7, linewidths = 5.0, zorder = 4)
+# #label the panels in the lower left corner
+# axs[1,0].text(0.05, 0.95, 'pebble', transform=axs[1,0].transAxes, fontsize=18, va='top', ha='left')
+# axs[1,0].text(0.05, 0.05, 'dust', transform=axs[1,0].transAxes, fontsize=18, va='bottom', ha='left')
+# axs[1,0].set_xlabel(r'$R$ [AU]', fontsize = 12)
+# axs[1,0].plot([0.8, 0.8, 1.3, 1.3, 0.8], [-0.04, 0.04, 0.04, -0.04, -0.04], color='r', lw=3, ls='-', zorder=20)
+#
+# # axs[1,0].streamplot(x1_exp_half,x3_exp, 
+# #                     flx_x_xz/normal2, flx_z_xz/normal2, 
+# #                     linewidth = 2, arrowstyle = '->', 
+# #                     density = 1.0, broken_streamlines = True, 
+# #                     color ='orange',zorder=4,arrowsize = 1.5)
+# axs[1,0].streamplot(x1_exp_half,x3_exp, 
+#                     ice1_flx_x_xz/normal2, ice1_flx_z_xz/normal2, 
+#                     linewidth = lw_flx_ice1, arrowstyle = '->',
+#                     density = 2.5, broken_streamlines = True, 
+#                     color ='blue',zorder=4)
+# axs[1,0].streamplot(x1_exp_half,x3_exp, 
+#                     water_flx_x_xz/normal2, water_flx_z_xz/normal2,
+#                     linewidth = lw_flx_water, arrowstyle = '->', 
+#                     density = 3.0, broken_streamlines = True, color ='#d6336c',zorder=4)
+#
+# axs[1,0].streamplot(x1_exp_half,z_neg, 
+#                     ice_flx_x_xz[::-1,:]/normal2,
+#                     - ice_flx_z_xz[::-1,:]/normal2,
+#                     linewidth = lw_flx_ice[::-1,:], arrowstyle = '->', density = 2.0, broken_streamlines = True, color ='blue',zorder=4)
+# axs[1,0].streamplot(x1_exp_half,z_neg, 
+#                     water_flx_x_xz[::-1,:]/normal2, 
+#                     - water_flx_z_xz[::-1,:]/normal2,
+#                     linewidth = lw_flx_water[::-1,:], arrowstyle = '->', 
+#                     density = 3.0, broken_streamlines = True, color ='#d6336c',zorder=4)
+# # axs[1,0].streamplot(x1_exp_half,z_neg, 
+# #                     flx_x_xz[::-1,:]/normal2, 
+# #                     - flx_z_xz[::-1,:]/normal2,
+# #                     linewidth = 1.5, arrowstyle = '->', density = 1.0, broken_streamlines = True, 
+# #                     color ='orange',zorder=4)
+#
+# #get the advection flux of the ice and water vapor 
+# # flx_ice_adv_x = dust_1_rho*dust_1_vx1*dS_R*UNIT_Fm
+# # flx_ice_adv_z = dust_1_rho*dust_1_vx2*dS_theta*UNIT_Fm
+# #
+# # flx_ice1_adv_x = dust_3_rho*dust_3_vx1*dS_R*UNIT_Fm 
+# # flx_ice1_adv_z = dust_3_rho*dust_3_vx2*dS_theta*UNIT_Fm 
+# #
+# # ice_flx_adv_x, ice_flx_adv_y, ice_flx_adv_z = v_Intpl_Sph2car(rad,theta,phi,x1_exp_half,slice_exp,x3_exp,(flx_ice_adv_x).T,(flx_ice_adv_z).T, (flx_ice_adv_z).T * 0.0)
+# # ice_flx_adv_x_xz = ice_flx_adv_x[:,0,:]
+# # ice_flx_adv_z_xz = ice_flx_adv_z[:,0,:]
+# #
+# # ice1_flx_adv_x, ice1_flx_adv_y, ice1_flx_adv_z = v_Intpl_Sph2car(rad,theta,phi,x1_exp_half,slice_exp,x3_exp,(flx_ice1_adv_x).T,(flx_ice1_adv_z).T, (flx_ice1_adv_z).T * 0.0)
+# # ice1_flx_adv_x_xz = ice1_flx_adv_x[:,0,:]
+# # ice1_flx_adv_z_xz = ice1_flx_adv_z[:,0,:]
+# #
+# #
+# # lw_ice_adv = sqrt(ice_flx_adv_x_xz**2 + ice_flx_adv_z_xz**2)/normal2
+# # lw_ice1_adv = sqrt(ice1_flx_adv_x_xz**2 +ice1_flx_adv_z_xz**2)/normal2
+#
+# # axs[1,0].streamplot(x1_exp_half,x3_exp, ice1_flx_adv_x_xz/normal2, ice1_flx_adv_z_xz/normal2,linewidth = lw_ice1_adv, arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='green',zorder=4)
+# # axs[1,0].streamplot(x1_exp_half,z_neg, 
+# #                     ice_flx_adv_x_xz[::-1,:]/normal2, 
+# #                     ice_flx_adv_z_xz[::-1,:]/normal2,
+# #                     linewidth = lw_ice_adv[::-1,:], arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='green',zorder=4)
+#
+#
+# #move the colorbar to be aligned with the bottom of top figure 
+# cbarrho = fig.colorbar(crho1, ax=axs[1,0],location = 'right', shrink = 0.45, pad =-0.085,anchor=(0,-0.))
+# cbarrho.set_ticks([1e-13, 1e-12,1e-11], labels = ['$10^{-13}$', '$10^{-12}$', '$10^{-11}$'])
+# cbarrho.ax.set_title(r'$\rho_{\mathrm{ice}} [g/cm^3]$', fontsize = 12)
+# cbarvap = fig.colorbar(ax0, ax=axs[1,0], location = 'right', shrink = 0.45, pad =0.04, anchor=(0,1))
+# cbarvap.set_ticks([1e-13, 1e-12, 1e-11], labels = ['$10^{-13}$', '$10^{-12}$', '$10^{-11}$'])
+# cbarvap.ax.set_title(r'$\rho_{\mathrm{vap}} [g/cm^3]$', fontsize = 12)
+#
+# # mass and water comp
+# axs[0,1].set_xlabel(r'$R$ [AU]', fontsize = 12)
+# axs[0,1].set_ylabel(r'$z$ [AU]', fontsize = 12)
+# # axs[1,2].plot(rad, H_profile(rad)/AU, '--', c='gray', lw=1)
+# # axs[1,2].plot(rad, -H_profile(rad)/AU, '--', c='gray', lw=1)
+# axs[0,1].plot(xx_exp, -yy0, '--', c='k', lw=1, zorder=10)
+# axs[0,1].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10)
+# axs[0,1].plot([0.8, 0.8, 1.3, 1.3, 0.8], [-0.04, 0.04, 0.04, -0.04, -0.04], color='r', lw=3, ls='-', zorder=20)
+#
+#
+# cmap_mass = LinearSegmentedColormap.from_list('mass_cmap', 
+#     ['white', '#fee090', '#fc8d59', '#c2518a', 'purple'], N=256)
+# # c1 = axs[0,1].contourf(x_xz_c, y_xz_c, m_p1_xz, levels = logspace(-8, 4.5, 31), norm = LogNorm(),cmap = cmap_mass, alpha = 1.0,extend = 'both')
+# c1 = axs[0,1].contourf(x_xz_c, y_xz_c, s_p1_xz, levels = logspace(-2.5, 2, 21), norm = LogNorm(),cmap = cmap_mass, alpha = 1.0,extend = 'both')
+# axs[0,1].contourf(x_xz_c, -y_xz_c, s_p_xz, levels = logspace(-2.5, 2, 21), norm = LogNorm(),cmap = cmap_mass, alpha = 1.0,extend = 'both')
+# axs[0,1].axhline(0.0, c= 'k', ls='-',linewidth = 4., zorder=15)
+#
+# cbar0 = fig.colorbar(c1, ax=axs[0,1], location = 'right', shrink = 1, pad = 0.04, anchor=(0,0))
+# cbar0.ax.set_title(r'$\mathbf{s [cm]}$', fontsize = 20,fontweight = 'bold')
+#
+# ticks = logspace(-2, 2, 5)
+# cbar0.set_ticks(ticks)
+#
+# # ax[0].contour(x_xz_c,y_xz_c,r_snow_2d(tem_xz,rho_xz,0.4) ,levels = [1.e-3,1.0,1.e3], cmap = 'Greens_r', alpha = 0.7, linewidths = 5.0)
+#
+# #plot the water mass fraction 
+# axs[1,1].plot(xx_exp, -yy0, '--', c='k', lw=1, zorder=10)
+# axs[1,1].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10)
+# axs[1,1].axhline(0.0, c= 'k', ls='-',linewidth = 4., zorder=15)
+# axs[1,1].plot([0.8, 0.8, 1.3, 1.3, 0.8], [-0.04, 0.04, 0.04, -0.04, -0.04], color='r', lw=3, ls='-', zorder=20)
+# # axs[1,2].plot(rad, H_profile(rad)/AU, '--', c='gray', lw=1)
+# axs[1,1].set_xlabel(r'$R$ [AU]', fontsize = 12)
+# axs[1,1].set_ylabel(r'$z$ [AU]', fontsize = 12)
+# # c0 = axs[1,1].contourf(x_xz_c, y_xz_c,m_p_xz, levels = logspace(-8, 3.5, 21), norm = LogNorm(), cmap = cmap_mass, alpha = 1.0,extend = 'both')
+# ccomp0 = axs[1,1].contourf(x_xz_c, -y_xz_c, watercomp0, levels = linspace(0.4,0.9,16), cmap = 'Blues', alpha = 0.8,extend = 'both')
+# axs[1,1].contour(x_xz_c, -y_xz_c, watercomp0, levels = [0.5], colors = 'k', linewidths = 2.0)
+#
+# axs[1,1].contour(x_xz_c,  y_xz_c, watercomp1, levels = [0.5], colors = 'k', linewidths = 2.0)
+# axs[1,1].contourf(x_xz_c, y_xz_c, watercomp1, levels = linspace(0.4,0.9,16), cmap = 'Blues', alpha = 0.8,extend = 'both')
+# #also plot the 1/2 line 
+#
+# # axs[0,1].text(0.05, 0.1, 'pebble', transform=axs[0,1].transAxes, fontsize=18, va='top', ha='left',zorder =23)
+# # axs[1,1].text(0.05, 0.05, 'dust', transform=axs[1,1].transAxes, fontsize=18, va='bottom', ha='left',zorder =22)
+#
+# cbarcomp0 = fig.colorbar(ccomp0, ax=axs[1,1], location='right', shrink=1, pad=0.04, anchor=(0,1))
+# cbarcomp0.ax.set_title(r'$\mathbf{f_{\mathrm{H_2 O}}}$', fontsize = 20, fontweight = 'bold')
+# cbarcomp0.set_ticks([0.1, 0.5, 0.9], labels = ['0.1', '0.5', '0.9'])
+# cbarcomp0.ax.hlines(0.5, 0,1, color='k', linewidth=2)  # Mark the 0.5 line on the colorbar
+#
+# # axs[1,0].set_ylim(0, 0.25)
+# #
+# # axs[1,0].plot(xx_exp, yy0, '-.', c='k', lw=1, zorder=10,label = r'$H_{\mathrm{0}}$')
+# # axs[1,0].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10, label = r'$H_{\mathrm{1}}$')
+# # # axs[0,2].set_xlabel(r'$R$ [AU]', fontsize = 12)
+# # axs[1,0].set_ylabel(r'$z$ [AU]', fontsize = 12)
+# # # reconstruct the dust size distribution. 
+# # # The crude one: 
+# # pp= log10((dust_1_rho_xz+dust_2_rho_xz)/(dust_3_rho_xz + dust_4_rho_xz))/log10(m_p_xz/m_p1_xz)
+# # ax0 = axs[1,0].contourf(x_xz_c,y_xz_c,pp,levels = linspace(-1, 1, 21), cmap = 'coolwarm', alpha = 0.8, extend = 'both')
+# # #label the 1/6 line 
+# # axs[1,0].contour(x_xz_c,y_xz_c, pp, levels = [1.0/6.0], colors = 'k', linewidths = 2.0, extend = 'both')
+# # cbar0 = fig.colorbar(ax0, ax=axs[1,0])
+# # cbar0.ax.set_title(r'$p$', fontsize = 12)
+# # #mark the 1/6 line in color bar 
+# # cbar0.ax.plot([1,0],[1.0/6.0,1.0/6.0], color = 'k', linewidth = 2.0)
+# #
+# # axs[1,0].legend(frameon=False, loc='upper left', fontsize=12)
+# #
+# # axs[0,0].legend(handles=legend_handles_panel1, loc='upper right', frameon=True, fontsize=12)
+#
+# plt.savefig('./plots/2ddust_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
+# plt.close()
+#

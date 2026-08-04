@@ -7,17 +7,17 @@
 # # python animation.py
 
 # Number of parallel processes (adjust based on your CPU cores)
-NUM_PROCESSES=40
+NUM_PROCESSES=4
 
 # Define the range of values
-START=1261
-END=1341
+START=900
+END=1167
 
 # Function to run the plotting script
 run_plot() {
 	for ((i = $1; i <= $2; i++)); do
 		echo "Processing item $i"
-		python plot.py $i passive_test &
+		python plot.py $i 2p_active_1e-3_03 &
 		# Limit the number of background processes
 		if (($(jobs -r | wc -l) >= NUM_PROCESSES)); then
 			wait -n
