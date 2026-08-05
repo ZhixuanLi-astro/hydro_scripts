@@ -7,11 +7,11 @@
 # # python animation.py
 
 # Number of parallel processes (adjust based on your CPU cores)
-NUM_PROCESSES=4
+NUM_PROCESSES=40
 
 # Define the range of values
-START=900
-END=1167
+START=200
+END=800
 
 # Function to run the plotting script
 run_plot() {
