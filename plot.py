@@ -466,6 +466,19 @@ dust_2_rho_mod = dust_rho_mod_xz[2] if 2 in dust_rho_mod_xz else zeros_like(rho_
 dust_4_rho_mod = dust_rho_mod_xz[4] if 4 in dust_rho_mod_xz else zeros_like(rho_xz)
 
 
+rhoint_sil = athinputs['problem']['rho_sil_inter']
+rhoint_ice = athinputs['problem']['rho_ice_inter']
+def get_rhoint(rho_sil, rho_ice):
+    fice = rho_ice/(rho_sil+rho_ice)
+    fsil = 1 - fice 
+    rhoint = rhoint_sil*rhoint_ice/(fice*rhoint_sil + fsil*rhoint_ice)
+    return rhoint 
+
+def get_mu (fv):
+    mu = 1/(fv/mu_z + (1-fv)/mu_xy)
+    return mu
+
+
 #find the scale height location: 
 def find_dust_scaleheight(rhos_intpl, y_xz_c):
     rho_p = rhos_intpl[1] 
@@ -738,6 +751,17 @@ singlepop = (sys.argv[2] == 'single_pop') or (sys.argv[2] == 'single_lowa') or (
 singlepop = singlepop or (sys.argv[2].find('single') >= 0)
 
 
+if singlepop:
+    rho_sil = dust_2_rho 
+    rho_ice = dust_1_rho
+else:
+    rho_sil = dust_2_rho + dust_4_rho
+    rho_ice = dust_1_rho + dust_3_rho
+
+rhoint = get_rhoint(rho_sil, rho_ice)
+mu = get_mu(dust_3_rho/rho)
+cs = sqrt(tem*kB_mp_cgs/mu)
+aaa = st/rhoint/s_p*(rho-dust_3_rho)*cs
 
 #plot a time evolution of the fragmenation velocity and maximum peb mass 
 # v_ice = 1000 
