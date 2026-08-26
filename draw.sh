@@ -12,12 +12,11 @@ NUM_PROCESSES=40
 # Define the range of values
 START=200
 END=800
-
 # Function to run the plotting script
 run_plot() {
 	for ((i = $1; i <= $2; i++)); do
 		echo "Processing item $i"
-		python plot.py $i 2p_active_1e-3_03 &
+		python plot_puregas.py $i pg_bigdamping &
 		# Limit the number of background processes
 		if (($(jobs -r | wc -l) >= NUM_PROCESSES)); then
 			wait -n
