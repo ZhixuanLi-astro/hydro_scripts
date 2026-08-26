@@ -141,9 +141,16 @@ def face_f_2_cos(x2min,x2max,cell_width_ratio,num_face):
     return tmp
 
 
+# def face_f_2_power(x2min,x2max,cell_width_ratio,num_face):
+#     x = linspace(0,1,num_face)
+#     w = (x)**(1/3)
+#     tmp = w*(x2max-x2min) + x2min
+#
+#     return tmp
+
 def face_f_2_power(x2min,x2max,cell_width_ratio,num_face):
     x = linspace(0,1,num_face)
-    w = (x)**(1/3)
+    w = (x)**(1/2)
     tmp = w*(x2max-x2min) + x2min
     
     return tmp
@@ -178,6 +185,7 @@ xx_exp_mesh, zz_exp_mesh = meshgrid(xx_exp,zz_exp)
 GM = (r0)**3
 tlim = athinputs['time']['tlim']/YR*UNIT_T*2*pi 
 
+
 # DIR = '/home/yu/Programs/Athena/work/output/snowline_2D/output4/'
 # DIR = '/mnt/disk1/dataYu/output/snowline_2D/output37/'
 #----------------------------------------
@@ -196,6 +204,25 @@ phi[-1] = phi[0] = 0.0
 theta_f = data_prim['x2f']
 rad_f = data_prim['x1f']/ L_norm
 
+# face coordinate
+index_phi = 0
+THETA, PHI, R = meshgrid(theta_f,phi_f,rad_f)
+x = R* sin(THETA) * cos(PHI)
+y = R* sin(THETA) * sin(PHI)
+z = R* cos(THETA)
+x_xz = x[index_phi,:,:].T
+y_xz = z[index_phi,:,:].T
+
+# cell center coordinate
+THETA, PHI, R = meshgrid(theta,phi,rad)
+x = R* sin(THETA) * cos(PHI)
+y = R* sin(THETA) * sin(PHI)
+z = R* cos(THETA)
+# x_xz_c = x[index_phi,:,:].T
+# y_xz_c = z[index_phi,:,:].T
+x_xz_c = x_xz[1:,1:]
+y_xz_c = y_xz[1:,1:]
+
 simu_time = data_prim['Time']
 hstname = DIR+'iceline.hst'
 # data_hst = athena_read.hst(hstname)
@@ -208,10 +235,13 @@ vx1 = data_prim['vel1']
 vx2 = data_prim['vel2']
 vx3 = data_prim['vel3']
 
+index_phi = 0
+rho_xz = rho[index_phi,:,:].T
+
 dust_id_pat = re.compile(r'^dust_(\d+)_rho$')
 dust_ids = sorted(int(m.group(1)) for k in data_prim.keys() for m in [dust_id_pat.match(k)] if m)
 N_Z = 2 
-N_P = int((dust_ids[-1] - 1)/(N_Z + 1))
+N_P = int((dust_ids[-1] - 1)/(N_Z + 1)) if len(dust_ids) > 0 else 0
 
 dust_rho = {did: data_prim[f'dust_{did}_rho'] for did in dust_ids}
 dust_vel = {}
@@ -353,15 +383,6 @@ except:
 
 # gamma = data_uov['gamma']
 
-# face coordinate
-index_phi = 0
-THETA, PHI, R = meshgrid(theta_f,phi_f,rad_f)
-x = R* sin(THETA) * cos(PHI)
-y = R* sin(THETA) * sin(PHI)
-z = R* cos(THETA)
-x_xz = x[index_phi,:,:].T
-y_xz = z[index_phi,:,:].T
-
 dust_vel_xz = {
     did: {
         'vel1': dust_vel[did]['vel1'][index_phi,:,:].T,
@@ -377,16 +398,6 @@ dust_1_vx3_xz = dust_vel_xz[1]['vel3'] if 1 in dust_vel_xz else zeros_like(rho[i
 dust_3_vx1_xz = dust_vel_xz[3]['vel1'] if 3 in dust_vel_xz else zeros_like(rho[index_phi,:,:].T)
 dust_3_vx2_xz = dust_vel_xz[3]['vel2'] if 3 in dust_vel_xz else zeros_like(rho[index_phi,:,:].T)
 dust_3_vx3_xz = dust_vel_xz[3]['vel3'] if 3 in dust_vel_xz else zeros_like(rho[index_phi,:,:].T)
-
-# cell center coordinate
-THETA, PHI, R = meshgrid(theta,phi,rad)
-x = R* sin(THETA) * cos(PHI)
-y = R* sin(THETA) * sin(PHI)
-z = R* cos(THETA)
-# x_xz_c = x[index_phi,:,:].T
-# y_xz_c = z[index_phi,:,:].T
-x_xz_c = x_xz[1:,1:]
-y_xz_c = y_xz[1:,1:]
 
 # cell area
 dR = data_prim['x1f'][1:]-data_prim['x1f'][0:-1]
@@ -415,8 +426,6 @@ flx_sil1_x1 *= dS_R* UNIT_Fm
 flx_sil1_x2 *= dS_theta*UNIT_Fm 
 
 # slices
-index_phi = 0
-rho_xz = rho[index_phi,:,:].T
 dust_rho_xz = {did: dust_rho[did][index_phi,:,:].T for did in dust_ids}
 dust_1_rho_xz = dust_rho_xz[1] if 1 in dust_rho_xz else zeros_like(rho_xz)
 dust_2_rho_xz = dust_rho_xz[2] if 2 in dust_rho_xz else zeros_like(rho_xz)
@@ -643,13 +652,22 @@ flux_gas_x,flux_gas_z,flux_gas_z = v_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0
 flux_gas_x_intpl = flux_gas_x[:,0,:]
 flux_gas_z_intpl = flux_gas_z[:,0,:]
 
+singlepop = False
+singlepop = (sys.argv[2] == 'single_pop') or (sys.argv[2] == 'single_lowa') or (sys.argv[2] == 'single_active')
+#anything include 'single' is single pop: 
+singlepop = singlepop or (sys.argv[2].find('single') >= 0)
+singlepop = singlepop or (sys.argv[2][-1] == 'S')
+singlepop = singlepop or (sys.argv[2] == 'test_highr')
+
+
 # calc optical depth
 kappa0 = athinputs['problem']['kappa0']
 f_vi = athinputs['problem']['f_vi']
 tau_opt = zeros(rho_xz.shape)
 for j in range(tau_opt.shape[1]):
     dx2 = rad*L_norm*(theta_f[1]-theta_f[0])
-    tau_opt[:,j] += tau_opt[:,j-1] + rho_xz[:,j]*Get_kappa(kappa0, 0.0, dust_5_rho_xz/rho_xz)[:,j] * dx2
+    fv = dust_3_rho_xz/rho_xz if singlepop else dust_5_rho_xz/rho_xz
+    tau_opt[:,j] += tau_opt[:,j-1] + rho_xz[:,j]*Get_kappa(kappa0, 0.0, fv)[:,j] * dx2
 
 tau_ir = tau_opt/3
 tau_ir_intpl = scaler_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0.0]),zz_exp, array([tau_ir.T]).T)[:,0,:]
@@ -745,11 +763,6 @@ zz = 0.17
 rr_idx = (abs(rad - rr)).argmin()
 zz_idx = (abs(theta - arccos(zz/rr))).argmin()
 
-singlepop = False
-singlepop = (sys.argv[2] == 'single_pop') or (sys.argv[2] == 'single_lowa') or (sys.argv[2] == 'single_active')
-#anything include 'single' is single pop: 
-singlepop = singlepop or (sys.argv[2].find('single') >= 0)
-
 
 if singlepop:
     rho_sil = dust_2_rho 
@@ -794,6 +807,17 @@ aaa = st/rhoint/s_p*(rho-dust_3_rho)*cs
 # plt.savefig('./plots/vfrag_time.png', dpi = 300, bbox_inches='tight')
 # plt.close()
 
+#plot dust vertical velocity
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.set_ylim(0, 0.25)
+ax.set_xlim(rin/L_norm, rout/L_norm)
+cvel = ax.contourf(x_xz_c,y_xz_c,dust_3_vx2_xz*UNIT_V, cmap = 'Greys', alpha = 1.0, extend = 'both', antialiased = True)
+ax.contourf(x_xz_c, y_xz_c, (dust_1_rho_mod+dust_2_rho_mod)*UNIT_DEN, levels = logspace(-19,-9,10), norm = LogNorm(), cmap = 'Blues', alpha = 0.7, extend = 'both',zorder=4, antialiased = True)
+ax.contourf(x_xz_c, y_xz_c, (dust_3_rho_mod+dust_4_rho_mod)*UNIT_DEN, levels = logspace(-19,-9,10), norm = LogNorm(), cmap = 'Greens', alpha = 0.7, extend = 'both',zorder=4, antialiased = True)
+cbarvel = fig.colorbar(cvel, ax = ax, orientation = 'vertical')
+plt.savefig('./plots/dv_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
+plt.close()
+
 fig, ax = plt.subplots(figsize=(10, 6))
 ax.set_ylim(0, 0.25)
 ax.set_xlim(rin/L_norm, 3)
@@ -802,13 +826,13 @@ crhov =  ax.contourf(x_xz_c,y_xz_c,dust_5_rho_xz*UNIT_DEN,levels = logspace(-19,
 # ax.contourf(x_xz_c,-y_xz_c,dust_5_rho_xz*UNIT_DEN,levels = logspace(-19,-9,10), norm = LogNorm(), cmap = 'Greys', alpha = 1.0, extend = 'both',zorder=3, antialiased = True)
 colors = ['white', 'skyblue', 'deepskyblue', 'dodgerblue', 'blue', 'darkblue']
 if singlepop:
+    crho1= ax.contourf(x_xz_c,y_xz_c,(dust_1_rho_xz)/rho_xz,levels = logspace(log10(0.001), log10(0.05),7), norm = LogNorm(), antialiased = True, 
+                   colors = colors, alpha = 0.7, extend = 'max',
+                   zorder=4)
+else:
     crho1= ax.contourf(x_xz_c,y_xz_c,(dust_1_rho_xz+dust_3_rho_xz)/rho_xz,levels = logspace(log10(0.001), log10(0.05),7), norm = LogNorm(), antialiased = True, 
-                   colors = colors, alpha = 0.7, extend = 'max',
-                   zorder=4)
-
-crho1= ax.contourf(x_xz_c,y_xz_c,(dust_1_rho_xz+dust_3_rho_xz)/rho_xz,levels = logspace(log10(0.001), log10(0.05),7), norm = LogNorm(), antialiased = True, 
-                   colors = colors, alpha = 0.7, extend = 'max',
-                   zorder=4)
+                       colors = colors, alpha = 0.7, extend = 'max',
+                       zorder=4)
 # crho1= ax.contourf(x_xz_c,-y_xz_c,(dust_3_rho_mod)/rho_xz,levels = logspace(log10(0.05), log10(1.25),5), norm = LogNorm(), antialiased = True, 
 #                    colors = colors, alpha = 0.7, extend = 'both',zorder=4)
 # ax0 =  ax.contourf(x_xz_c,-y_xz_c,dust_5_rho_mod,levels = logspace(log10(d2g_snow),log10(1.0),25), norm = LogNorm(), cmap = 'RdPu', alpha = 0.7, extend = 'both',zorder=3, antialiased = True)
@@ -941,6 +965,8 @@ cbarT.ax.set_ylabel(r'$T$ [K]', fontsize = 12)
 C = ax.contour(x_xz_c,y_xz_c,tau_ir,levels = array([1.0]), colors = 'purple', linestyles = 'dashed', linewidths = 3.0, zorder = 5)
 C = ax.contour(xx_exp_mesh, zz_exp_mesh,tau_ir_intpl,levels = array([1.0]), colors = 'pink', linestyles = 'dashed', linewidths = 3.0, zorder = 5)
 ax.annotate(r'$\tau_{ir}=1$', xy=(2.5, 0.25), xytext=(2.5, 0.1), fontsize = 20, color = 'purple', zorder = 10, fontweight = 'bold',rotation = 20)
+
+ax.scatter(x_xz_c[34, 36], y_xz_c[34, 36], color = 'red', s = 50, marker = 'o', label = r'$(R,z)=(2.75,0.18)$ AU', zorder = 10)
 
 fig.savefig('./plots/vap_obs_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500)
 
@@ -1364,7 +1390,7 @@ if singlepop:
     ticks = logspace(-12, -1, 5)
     ax.set_ylabel(r'$z$ [AU]', fontsize = 12)
     ax.set_ylim(0., 0.15)
-    ax.set_xlim(0.5, 2.0)
+    ax.set_xlim(0.5, 3.0)
     legends = [Line2D([0], [0], color='k', lw=2, marker = '>', label=r'$10^{-3}~\rho_{0}c_{\mathrm{s,0}}$'),
                Line2D([0], [0], color='k', ls = '--', lw=1, label=r'$H_{peb}$'), 
                Line2D([0], [0], color='gray', ls = '-.', lw=1, label=r'$H_{\mathrm{gas}}$')]
@@ -1542,8 +1568,9 @@ if singlepop:
 
     ax[2].set_xlabel(r'$r$ [au]')
 
-    ax[0].annotate('(a)',xy = (0.02,0.92),xycoords = 'axes fraction',fontsize = 20)
+    ax[0].set_title('Time = {:.2f} yr'.format(simu_time*UNIT_T/YR),fontsize = 15, loc = 'left')
 
+    ax[0].annotate('(a)',xy = (0.02,0.92),xycoords = 'axes fraction',fontsize = 20)
     ax[1].annotate('(b)',xy = (0.02,0.92),xycoords = 'axes fraction',fontsize = 20)
     ax[2].annotate('(c)',xy = (0.02,0.92),xycoords = 'axes fraction',fontsize = 20)
 
@@ -1656,6 +1683,7 @@ for i in range(len(list(ax))):
     ax[i].set_ylim(0,zs)
     # ax[i].set_aspect(1)
 
+ax[0].set_ylim(0,0.1)
 ax[1].set_ylim(0,0.1)
 
 ax[0].set_ylabel('$z$ [au]',fontsize =15)
@@ -1664,6 +1692,7 @@ ax[1].set_xlabel('$r$ [au]',fontsize =15)
 
 plt.savefig('./plots/rho_xz_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
 plt.close()
+import pdb; pdb.set_trace()
 #==============================================================================
 #==============================================================================
 # fig, axs = plt.subplots(2, 2, figsize=(18, 12), constrained_layout=True, facecolor='none')
@@ -1677,7 +1706,7 @@ axs[1, 0] = fig.add_subplot(grid[1, 0])
 axs[1, 1] = fig.add_subplot(grid[1, 1])
 
 xin = 0.6 
-xout = 2.5 
+xout = 3.0 
 yin = -0.1 
 yout = 0.1 
 for ax in axs.flatten():
@@ -1947,32 +1976,32 @@ plt.close()
 # plt.savefig('./plots/trelax_{:05d}.png'.format(int(filenum)) ,dpi=300)
 # plt.close()
 
-# fig, axs = plt.subplots(2, 1, figsize=(9, 9))
-# cbar = axs[0].contourf(x_xz_c, y_xz_c, st1_xz, levels = logspace(-6,-2, 21),
-#                     norm = LogNorm(),extend = 'both', cmap = cm.viridis)
-# # axs[0].contour(x_xz_c, y_xz_c, rrr, levels = [7.0], colors = 'white', linewidths = 1.5)
-# cbar = fig.colorbar(cbar, format=ticker.FuncFormatter(formatnum), ax = axs[0], orientation = 'vertical',)
-# # cbar.set_ticks([1, 10, 100, 1000, 1e4, 1e5])
-# cbar.ax.set_title(r'$St$')
-# axs[0].plot(xx_exp, yy0, '-.', c='k', lw=1, zorder=10,label = r'$H_{\mathrm{0}}$')
-# axs[0].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10, label = r'$H_{\mathrm{1}}$')
-# axs[0].legend(frameon=False, loc='upper left', fontsize=12)
-# axs[0].set_ylim(0, 0.25)
-# axs[0].set_xlim(rin/L_norm, rout/L_norm)
-#
-# bbar = axs[1].contourf(x_xz_c, y_xz_c, dust_7_rho_xz/UNIT_L**3, levels = logspace(-10,1,16), 
-#                        norm = LogNorm(), extend = 'both',cmap = cm.viridis)
-# cbartre = fig.colorbar(bbar, format=ticker.FuncFormatter(formatnum), ax = axs[1], orientation = 'vertical',)
-# cbartre.ax.set_title('$n_1$')
-# axs[1].plot(xx_exp, yy0, '-.', c='k', lw=1, zorder=10,label = r'$H_{\mathrm{0}}$')
-# axs[1].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10, label = r'$H_{\mathrm{1}}$')
-# axs[1].legend(frameon=False, loc='upper left', fontsize=12)
-# axs[1].set_ylim(0, 0.25)
-# axs[1].set_xlim(rin/L_norm, rout/L_norm)
-#
-# plt.tight_layout()
-# plt.savefig('./plots/St_{:05d}.png'.format(int(filenum)) ,dpi=300)
-# plt.close()
+fig, axs = plt.subplots(2, 1, figsize=(9, 9))
+cbar = axs[0].contourf(x_xz_c, y_xz_c, st1_xz, levels = logspace(-6,-2, 21),
+                    norm = LogNorm(),extend = 'both', cmap = cm.viridis)
+# axs[0].contour(x_xz_c, y_xz_c, rrr, levels = [7.0], colors = 'white', linewidths = 1.5)
+cbar = fig.colorbar(cbar, format=ticker.FuncFormatter(formatnum), ax = axs[0], orientation = 'vertical',)
+# cbar.set_ticks([1, 10, 100, 1000, 1e4, 1e5])
+cbar.ax.set_title(r'$St$')
+axs[0].plot(xx_exp, yy0, '-.', c='k', lw=1, zorder=10,label = r'$H_{\mathrm{0}}$')
+axs[0].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10, label = r'$H_{\mathrm{1}}$')
+axs[0].legend(frameon=False, loc='upper left', fontsize=12)
+axs[0].set_ylim(0, 0.25)
+axs[0].set_xlim(rin/L_norm, rout/L_norm)
+
+bbar = axs[1].contourf(x_xz_c, y_xz_c, dust_7_rho_xz/UNIT_L**3, levels = logspace(-10,1,16), 
+                       norm = LogNorm(), extend = 'both',cmap = cm.viridis)
+cbartre = fig.colorbar(bbar, format=ticker.FuncFormatter(formatnum), ax = axs[1], orientation = 'vertical',)
+cbartre.ax.set_title('$n_1$')
+axs[1].plot(xx_exp, yy0, '-.', c='k', lw=1, zorder=10,label = r'$H_{\mathrm{0}}$')
+axs[1].plot(xx_exp, yy1, '--', c='k', lw=1, zorder=10, label = r'$H_{\mathrm{1}}$')
+axs[1].legend(frameon=False, loc='upper left', fontsize=12)
+axs[1].set_ylim(0, 0.25)
+axs[1].set_xlim(rin/L_norm, rout/L_norm)
+
+plt.tight_layout()
+plt.savefig('./plots/St_{:05d}.png'.format(int(filenum)) ,dpi=300)
+plt.close()
 
 # def ff_broken (pwl, prec, ml, mu):
 #     """integrate f(m)=prec*m**-pwl from ml to mu"""
@@ -2234,8 +2263,8 @@ for i in range(2):
 
 ax[2].set_xlabel(r'$r$ [au]')
 
+ax[0].set_title('Time = {:.2f} yr'.format(simu_time*UNIT_T/YR),fontsize = 15, loc = 'left')
 ax[0].annotate('(a)',xy = (0.02,0.92),xycoords = 'axes fraction',fontsize = 20)
-
 ax[1].annotate('(b)',xy = (0.02,0.92),xycoords = 'axes fraction',fontsize = 20)
 ax[2].annotate('(c)',xy = (0.02,0.92),xycoords = 'axes fraction',fontsize = 20)
 

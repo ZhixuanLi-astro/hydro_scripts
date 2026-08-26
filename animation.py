@@ -1,25 +1,3 @@
-# import imageio.v2 as imageio
-# import glob
-# import sys
-#
-# # Gather all relevant files and sort them
-# try:
-#     pname = sys.argv[1]
-# except:
-#     pname = 'fig_snow_2d'
-#
-# file_list = glob.glob('./plots/{}_0*.png'.format(pname)) 
-# # sort them by the number in the filename 
-# file_list.sort(key=lambda x: int(x.split('_')[-1].split('.')[0])) 
-#
-# # Read images
-# images = [imageio.imread(fname) for fname in file_list]
-#
-# # Save as GIF
-# # imageio.mimsave('fig_snow_2d_animation.gif', images, duration=0.2)  # duration in seconds per frame
-#
-# # If you want an MP4 (requires ffmpeg):
-# imageio.mimsave('{}_animation.mp4'.format(pname), images, fps=40)
 import subprocess
 import glob
 import sys
@@ -55,7 +33,7 @@ def main():
     # 4. 构建 ffmpeg 命令，核心改动是加入了 -start_number 参数
     cmd = [
         'ffmpeg',
-        '-r', '60',                       # 输入帧率
+        '-r', '10',                       # 输入帧率
         '-start_number', str(start_number), # 【关键】明确告诉 ffmpeg 从第几号图片开始读取
         '-i', input_pattern,              # 输入图片序列模式
         '-c:v', 'libx264',                # 视频编码器
