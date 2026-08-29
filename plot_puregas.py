@@ -8,7 +8,7 @@ import astropy.constants as cons
 from preplot import pol2car, car2pol, dfdx_2pts, dfdx_5pts, dfdx_7pts, curl_in_polar_rlog,v_Intpl_Sph2car,scaler_Intpl_Sph2car
 
 # path to the athena_read module
-sys.path.insert(0, '/home/izx/athena_sublimation/vis/python')
+sys.path.insert(0, '/home/izx/athena-multifluid-dust/vis/python')
 import athena_read
 
 plt.rcParams.update({'font.size': 15})
@@ -111,7 +111,7 @@ def face_f_2_power(x2min, x2max, cell_width_ratio, num_face):
 # ----------------------------------------------------------------------
 filename = DIR + 'iceline.out1.' + str(nstep).rjust(5, '0') + '.athdf'
 print("Reading file: ", filename)
-data_prim = athena_read.athdf(filename, face_func_2=face_f_2_power, num_ghost=2)
+data_prim = athena_read.athdf(filename, face_func_2=face_f_2_power, num_ghost=0)
 
 rad = data_prim['x1v'] / L_norm    # cell-centered radius [AU]
 theta = data_prim['x2v']           # cell-centered polar angle [rad]
@@ -119,26 +119,6 @@ phi = data_prim['x3v']
 rad_f = data_prim['x1f'] / L_norm
 theta_f = data_prim['x2f']
 phi_f = data_prim['x3f']
-
-simu_time = data_prim['Time']
-
-rho = data_prim['rho']
-vel1 = data_prim['vel1']
-vel2 = data_prim['vel2']
-vel3 = data_prim['vel3']
-
-
-# ----------------------------------------------------------------------
-# read gas mass flux from the user-defined output (out2); if it is not
-# available, fall back to rho * v (the advective mass flux)
-# ----------------------------------------------------------------------
-fname_uov = DIR + 'iceline.out2.' + str(nstep).rjust(5, '0') + '.athdf'
-print("Reading file: ", fname_uov)
-data_uov = athena_read.athdf(fname_uov, face_func_2=face_f_2_power, num_ghost=2)
-
-flx_x1 = data_uov['flx_x1']   # radial mass-flux density (r direction)
-flx_x2 = data_uov['flx_x2']   # polar mass-flux density (theta direction)
-tem = data_uov['Tem']
 
 rin = athinputs['mesh']['x1min'] 
 rout = athinputs['mesh']['x1max']
@@ -179,7 +159,26 @@ z = R* cos(THETA)
 x_xz_c = x_xz[1:,1:]
 y_xz_c = y_xz[1:,1:]
 
+rho = data_prim['rho']
+vel1 = data_prim['vel1']
+vel2 = data_prim['vel2']
+vel3 = data_prim['vel3']
+
+# ----------------------------------------------------------------------
+# read gas mass flux from the user-defined output (out2); if it is not
+# available, fall back to rho * v (the advective mass flux)
+# ----------------------------------------------------------------------
+fname_uov = DIR + 'iceline.out2.' + str(nstep).rjust(5, '0') + '.athdf'
+print("Reading file: ", fname_uov)
+data_uov = athena_read.athdf(fname_uov, face_func_2=face_f_2_power, num_ghost=0)
+
+flx_x1 = data_uov['flx_x1']   # radial mass-flux density (r direction)
+flx_x2 = data_uov['flx_x2']   # polar mass-flux density (theta direction)
+tem = data_uov['Tem']
+
 simu_time = data_prim['Time']
+
+
 tem_xz = tem[index_phi,:,:].T
 
 rho_xz = rho[index_phi,:,:].T
@@ -244,8 +243,7 @@ ax[0].set_ylim(0,0.4)
 
 ax[0].contour(x_xz_c,y_xz_c,tau_ir,levels = array([1.0]), colors = 'purple', linestyles = 'dashed', linewidths = 3.0, zorder = 5)
 # hatch the place where the vertical velocity = 0 
-ax[0].fill_between(xx_exp, upper_damping, upper_bond, 
-                   color = 'none', hatch = '//', edgecolor = 'gray', alpha = 0.6, zorder = 5)
+ax[0].contourf(x_xz_c,y_xz_c,vel2[index_phi,:,:].T,levels = array([-1e-9,0.0,1e-9]), zorder = 10)
 
 for i, tt in enumerate(T_levels):
     cbarT.ax.axhline(tt, color=colors[i], linestyle='-', linewidth=1)
@@ -277,4 +275,52 @@ ax[1].annotate('(b)',xy = (0.02,0.92),xycoords = 'axes fraction',fontsize = 20)
 
 plt.savefig('./plots/fig_snow_2d_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500) 
 plt.close()
+import pdb; pdb.set_trace()
+
+filelist = range(1823, 1893)
+rho_ghost = zeros(len(filelist))
+rho_active = zeros(len(filelist))
+tL = zeros(len(filelist))
+flx_ghost = zeros(len(filelist))
+flx_active = zeros(len(filelist))
+
+for i, fn in enumerate(filelist):
+    filename = DIR + 'iceline.out1.' + str(fn).rjust(5, '0') + '.athdf'
+    print("Reading file: ", filename)
+    data_prim = athena_read.athdf(filename, face_func_2=face_f_2_power, num_ghost=2)
+    rho = data_prim['rho']
+    # vel1 = data_prim['vel1']
+    # vel2 = data_prim['vel2']
+    # vel3 = data_prim['vel3']
+
+# ----------------------------------------------------------------------
+# read gas mass flux from the user-defined output (out2); if it is not
+# available, fall back to rho * v (the advective mass flux)
+# ----------------------------------------------------------------------
+    fname_uov = DIR + 'iceline.out2.' + str(fn).rjust(5, '0') + '.athdf'
+    print("Reading file: ", fname_uov)
+    data_uov = athena_read.athdf(fname_uov, face_func_2=face_f_2_power, num_ghost=2)
+
+    flx_x1 = data_uov['flx_x1']   # radial mass-flux density (r direction)
+    flx_x2 = data_uov['flx_x2']   # polar mass-flux density (theta direction)
+    tem = data_uov['Tem']
+
+    simu_time = data_prim['Time']
+
+    tL[i] = simu_time*UNIT_T/YR
+    rho_ghost[i] = rho[0,-1,1]*UNIT_DEN
+    rho_active[i] = rho[0,-1,2]*UNIT_DEN
+
+    flx_ghost[i] = flx_x1[0,-1,1]*UNIT_Fm * dS_R[0, -1, 1]
+    flx_active[i] = flx_x1[0,-1,2]*UNIT_Fm * dS_R[0, -1, 2]
+
+fig, ax = plt.subplots(figsize = (7,5),facecolor='white')
+ax.plot(tL, rho_ghost/rho_active, label = r'$\rho_{\mathrm{ghost}}/\rho_{\mathrm{active}}$',
+        color = 'k', lw = 2)
+ax.set_ylim(-1e-3, 1e-3)
+ax.plot(tL, flx_active, label = r'$\mathcal{F}_{\mathrm{active}}$', color = 'b', lw = 2)
+ax.set_xlabel('Time [yr]')
+ax.set_ylabel(r'Mass Flux [$M_{\odot}$/yr]')
+
+fig.savefig('./plots/ghostflux_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500)
 import pdb; pdb.set_trace()

@@ -3,7 +3,8 @@
 names=("fig_snow_2d")
 for name in ${names[@]}; do
 	echo "Creating animation for $name"
-	python animation.py $name & #this & allows multiple animations to be created simultaneously
+	python animation.py $namethis &
+	allows multiple animations to be created simultaneously
 done
 
 wait
