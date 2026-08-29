@@ -163,6 +163,14 @@ rho = data_prim['rho']
 vel1 = data_prim['vel1']
 vel2 = data_prim['vel2']
 vel3 = data_prim['vel3']
+press = data_prim['press']
+
+# midplane (theta = pi/2, last x2 index) radial pressure-gradient diagnostic:
+# steep dlnP/dr near the inner edge is what drives (and is amplified by) the
+# radial sloshing mode there.
+press_mid = press[index_phi, -1, :]              # (nx1,) midplane pressure
+dlnP_dr = gradient(log(press_mid), rad)          # d lnP / dr [1/AU]
+dlnP_dr_exp = interp(xx_exp, rad, dlnP_dr)       # onto the interpolation grid
 
 # ----------------------------------------------------------------------
 # read gas mass flux from the user-defined output (out2); if it is not
@@ -213,8 +221,8 @@ Hpg_idx, yy_g = find_dust_scaleheight([[], rho_intpl], y_xz_c)
 UNIT_SIGMA = UNIT_DEN*UNIT_L
 sigma_gas =  sum(rho_intpl*dz,axis = 0)*2.0 *UNIT_SIGMA # remember to add up 2 wings
 
-fig = plt.figure(figsize = (7,10),facecolor='white')
-axes = fig.subplots(3,1)
+fig = plt.figure(figsize = (7,11.5),facecolor='white')
+axes = fig.subplots(4,1)
 ax = axes.flatten()
 fig.subplots_adjust(hspace = 0.06)
 
@@ -262,16 +270,23 @@ ax[1].set_ylabel(r'Radial Mass Flux [$10^{-8}M_{\odot}$/yr]',fontsize = 15)
 ax[1].legend(loc='upper right', fontsize = 10)
 for i in range(len(axes)):
     ax[i].set_xlim(rin/L_norm,rout/L_norm)
-for i in range(2):  
+for i in range(3):  
     ax[i].set_xticklabels([])   
 
-ax[1].set_xlabel(r'$r$ [au]')
+ax[3].set_xlabel(r'$r$ [au]')
 
 ax[2].plot(xx_exp,sigma_gas, color = 'k')
+
+# midplane radial pressure gradient (diagnostic: steep near the inner edge)
+ax[3].plot(xx_exp, dlnP_dr_exp, color='k', lw=2)
+ax[3].axhline(0.0, color='gray', lw=0.8)
+ax[3].set_ylabel(r'$d\ln P/dr$  [AU$^{-1}$]', fontsize = 15)
 
 ax[0].set_title('Time = {:.2f} yr'.format(simu_time*UNIT_T/YR),fontsize = 15, loc = 'left')
 ax[0].annotate('(a)',xy = (0.02,0.92),xycoords = 'axes fraction',fontsize = 20)
 ax[1].annotate('(b)',xy = (0.02,0.92),xycoords = 'axes fraction',fontsize = 20)
+ax[2].annotate('(c)',xy = (0.02,0.92),xycoords = 'axes fraction',fontsize = 20)
+ax[3].annotate('(d)',xy = (0.02,0.92),xycoords = 'axes fraction',fontsize = 20)
 
 plt.savefig('./plots/fig_snow_2d_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500) 
 plt.close()
