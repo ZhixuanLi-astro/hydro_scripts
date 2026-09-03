@@ -1015,7 +1015,10 @@ runs_2ddust = [('DPS', 'passive, single-pop'),
                ('DAR', 'active,  two-pop')]
 
 figC = plt.figure(figsize=(15, 17))
-gsC = gridspec.GridSpec(4, 2, figure=figC, hspace=0.30, wspace=0.10)
+# single-pop rows (DPS, DAS) show only z in [0, 0.15] (half of the two-pop
+# z in [-0.15, 0.15]) — give them half the row height so the z scale matches
+gsC = gridspec.GridSpec(4, 2, figure=figC, hspace=0.30, wspace=0.10,
+                        height_ratios=[1, 2, 1, 2])
 axC = [[figC.add_subplot(gsC[i, j]) for j in range(2)] for i in range(4)]
 
 # data_530 was loaded once above — reuse it (no second read of the run files)
@@ -1038,6 +1041,12 @@ for row, (name, tag, dd) in enumerate(run_data):
                          fontsize=14, va='top', ha='left')
         axC[row][1].text(0.05, 0.05, 'Dust', transform=axC[row][1].transAxes,
                          fontsize=14, va='bottom', ha='left')
+
+    # same 0.05 step for every row, so the half-height single-pop rows keep
+    # identical spacing to the two-pop rows
+    tickz = linspace(-0.15, 0.15, 7) if is2 else linspace(0.0, 0.15, 4)
+    axC[row][0].set_yticks(tickz)
+    axC[row][1].set_yticks(tickz)
 
     c_ice_reps.append(cice); c_vap_reps.append(cvap); c_comp_reps.append(ccomp)
 
