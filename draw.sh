@@ -10,13 +10,13 @@
 NUM_PROCESSES=40
 
 # Define the range of values
-START=0
-END=550
+START=80
+END=159
 # Function to run the plotting script
 run_plot() {
 	for ((i = $1; i <= $2; i++)); do
 		echo "Processing item $i"
-		python plot_puregas.py $i puregas &
+		python plot.py $i DPR &
 		# Limit the number of background processes
 		if (($(jobs -r | wc -l) >= NUM_PROCESSES)); then
 			wait -n

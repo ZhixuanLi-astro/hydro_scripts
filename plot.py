@@ -551,8 +551,8 @@ dust_5_vx_xz = dust_5_vx[:,0,:]
 dust_5_vy_xz = dust_5_vy[:,0,:]
 dust_5_vz_xz = dust_5_vz[:,0,:]
 
-flx_water_x1 = flx_vap_x1 
-flx_water_x2 = flx_vap_x2
+flx_water_x1 = flx_vap_x1 + flx_ice_x1 + flx_ice1_x1 
+flx_water_x2 = flx_vap_x2 + flx_ice_x2 + flx_ice1_x2
 
 flx_x, flx_y, flx_z = v_Intpl_Sph2car(rad,theta,phi,x1_exp_half,slice_exp,x3_exp,flx_x1.T, flx_x2.T, flx_x1.T * 0.0)
 flx_x_xz = flx_x[:,0,:]
@@ -658,6 +658,7 @@ singlepop = (sys.argv[2] == 'single_pop') or (sys.argv[2] == 'single_lowa') or (
 singlepop = singlepop or (sys.argv[2].find('single') >= 0)
 singlepop = singlepop or (sys.argv[2][-1] == 'S')
 singlepop = singlepop or (sys.argv[2] == 'test_highr')
+singlepop = singlepop or (sys.argv[2] == 'test_ini')
 
 
 # calc optical depth
@@ -966,30 +967,30 @@ C = ax.contour(x_xz_c,y_xz_c,tau_ir,levels = array([1.0]), colors = 'purple', li
 C = ax.contour(xx_exp_mesh, zz_exp_mesh,tau_ir_intpl,levels = array([1.0]), colors = 'pink', linestyles = 'dashed', linewidths = 3.0, zorder = 5)
 ax.annotate(r'$\tau_{ir}=1$', xy=(2.5, 0.25), xytext=(2.5, 0.1), fontsize = 20, color = 'purple', zorder = 10, fontweight = 'bold',rotation = 20)
 
-ax.scatter(x_xz_c[34, 36], y_xz_c[34, 36], color = 'red', s = 50, marker = 'o', label = r'$(R,z)=(2.75,0.18)$ AU', zorder = 10)
+# ax.scatter(x_xz_c[34, 36], y_xz_c[34, 36], color = 'red', s = 50, marker = 'o', label = r'$(R,z)=(2.75,0.18)$ AU', zorder = 10)
 
 fig.savefig('./plots/vap_obs_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500)
 
-# fig, axs = plt.subplots(2, 1, figsize=(6, 6))
-# m_p1_safe = where(m_p1[0].T > 0.0, m_p1[0].T, nan)
-# rrr = mmax[0].T/m_p1_safe
-# axs[0].set_title('time: {:.2f} yr'.format(simu_time*UNIT_T/YR),loc='left')
-# axs[0].scatter([rr], [zz], color = 'red', s = 50, marker = 'o', label = r'$(R,z)=(2.75,0.18)$ AU', zorder = 10)
-# cbar = axs[0].contourf(x_xz_c, y_xz_c,rrr, levels = logspace(-4,5, 11),
-#                     norm = LogNorm(vmin=1e-4 ,vmax=100000.0),extend = 'both', cmap = cm.viridis)
-# axs[0].contour(x_xz_c, y_xz_c, rrr, levels = [7.0], colors = 'white', linewidths = 1.5)
-# cbar = fig.colorbar(cbar, format=ticker.FuncFormatter(formatnum), ax = axs[0], orientation = 'vertical',)
-# cbar.set_ticks([1, 10, 100, 1000, 1e4, 1e5])
-# cbar.ax.set_title('$m_{max}/m_1$')
-#
-# bbar = axs[1].contourf(x_xz_c, y_xz_c, mmax[0].T, levels = logspace(-12,-1,16), 
-#                        norm = LogNorm(), extend = 'both',cmap = cm.viridis)
-# cbarmmax = fig.colorbar(bbar, format=ticker.FuncFormatter(formatnum), ax = axs[1], orientation = 'vertical',)
-# cbarmmax.set_ticks([1e-5, 1e-4, 1e-3, 1e-2, 1e-1])
-# cbarmmax.ax.set_title('$m_{max}$')
-#
-# plt.savefig('./plots/mmax_{:05d}.png'.format(int(filenum)) ,dpi=300)
-# plt.close()
+fig, axs = plt.subplots(2, 1, figsize=(6, 6))
+m_p1_safe = where(m_p1[0].T > 0.0, m_p1[0].T, nan)
+rrr = mmax[0].T/m_p1_safe
+axs[0].set_title('time: {:.2f} yr'.format(simu_time*UNIT_T/YR),loc='left')
+axs[0].scatter([rr], [zz], color = 'red', s = 50, marker = 'o', label = r'$(R,z)=(2.75,0.18)$ AU', zorder = 10)
+cbar = axs[0].contourf(x_xz_c, y_xz_c,rrr, levels = logspace(-4,5, 11),
+                    norm = LogNorm(vmin=1e-4 ,vmax=100000.0),extend = 'both', cmap = cm.viridis)
+axs[0].contour(x_xz_c, y_xz_c, rrr, levels = [7.0], colors = 'white', linewidths = 1.5)
+cbar = fig.colorbar(cbar, format=ticker.FuncFormatter(formatnum), ax = axs[0], orientation = 'vertical',)
+cbar.set_ticks([1, 10, 100, 1000, 1e4, 1e5])
+cbar.ax.set_title('$m_{max}/m_1$')
+
+bbar = axs[1].contourf(x_xz_c, y_xz_c, mmax[0].T, levels = logspace(-12,-1,16), 
+                       norm = LogNorm(), extend = 'both',cmap = cm.viridis)
+cbarmmax = fig.colorbar(bbar, format=ticker.FuncFormatter(formatnum), ax = axs[1], orientation = 'vertical',)
+cbarmmax.set_ticks([1e-5, 1e-4, 1e-3, 1e-2, 1e-1])
+cbarmmax.ax.set_title('$m_{max}$')
+
+plt.savefig('./plots/mmax_{:05d}.png'.format(int(filenum)) ,dpi=300)
+plt.close()
 
 colD = {'ga':'black', 'ss':'tab:orange', 'ms':'tab:orange', 'ls':'tab:orange', 'si':'tab:blue', 'mi':"tab:blue" ,'li':'tab:blue', 'va':'tab:purple'}
 lwD  = {'ga':2, 'ss':1, 'ms':3, 'ls':4, 'si':1, 'mi':3, 'li':4, 'va':2}  
@@ -1354,35 +1355,35 @@ rate_ratio = P_eq/P_vap * (dust_3_rho_xz/dust_1_rho_xz)
 # plt.close(fig_bar)
 # ---------------------------------------------------------------------
 
-#integrate from upper layer to the tau_ir = 1 layer to get the column density of the vapor.
-tau_ir_1 = where(tau_ir_intpl < 1.0, 1.0, 0.0)
-tau_ir_1 = where(tau_ir_intpl <= 0.0, 0.0, tau_ir_1)
-
-vap_rho_intpl = dust_5_rho_intpl*UNIT_DEN
-vap_cold_intpl = ma.masked_where(~((tem_intpl< 150) & (vap_rho_intpl > 0)), vap_rho_intpl)
-vap_warm_intpl = ma.masked_where(~((tem_intpl>= 150) & (tem_intpl < 400) & (vap_rho_intpl > 0)), vap_rho_intpl)
-vap_hot_intpl  = ma.masked_where(~((tem_intpl>= 400) & (vap_rho_intpl > 0)), vap_rho_intpl)
-
-Col_vap_cold = zeros(intpl_numx)
-Col_vap_cold = sum(vap_cold_intpl*tau_ir_1*dz,axis = 0)*2.0 *(2*pi*xx_exp*L_norm)*UNIT_SIGMA/(18.0*cons.m_p.cgs.value)
-
-Col_vap_warm = zeros(intpl_numx)
-Col_vap_warm = sum(vap_warm_intpl*tau_ir_1*dz,axis = 0)*2.0 *(2*pi*xx_exp*L_norm)*UNIT_SIGMA/(18.0*cons.m_p.cgs.value)
-
-Col_vap_hot = zeros(intpl_numx)
-Col_vap_hot = sum(vap_hot_intpl*tau_ir_1*dz,axis = 0)*2.0 *(2*pi*xx_exp*L_norm)*UNIT_SIGMA/(18.0*cons.m_p.cgs.value)  
-
-plt.figure(figsize=(10, 6))
-plt.plot(xx_exp, Col_vap_cold, color = 'blue', lw = 2, label = r'cold')
-plt.plot(xx_exp, Col_vap_warm, color = 'orange', lw = 2, label = r'warm')
-plt.plot(xx_exp, Col_vap_hot, color = 'red', lw = 2, label = r'hot')
-plt.xlabel(r'$R$ [AU]', fontsize = 13)
-plt.ylabel(r'Col$_{\rm vap}$ [molecules]', fontsize = 13)
-plt.yscale('log')
-plt.xlim(0.3, 2.0)
-plt.legend(frameon=True, fontsize=12)
-plt.savefig('./plots/col_vap_temp_{:05d}.png'.format(int(filenum)), dpi=100, bbox_inches='tight')
-plt.close()
+# #integrate from upper layer to the tau_ir = 1 layer to get the column density of the vapor.
+# tau_ir_1 = where(tau_ir_intpl < 1.0, 1.0, 0.0)
+# tau_ir_1 = where(tau_ir_intpl <= 0.0, 0.0, tau_ir_1)
+#
+# vap_rho_intpl = dust_5_rho_intpl*UNIT_DEN
+# vap_cold_intpl = ma.masked_where(~((tem_intpl< 150) & (vap_rho_intpl > 0)), vap_rho_intpl)
+# vap_warm_intpl = ma.masked_where(~((tem_intpl>= 150) & (tem_intpl < 400) & (vap_rho_intpl > 0)), vap_rho_intpl)
+# vap_hot_intpl  = ma.masked_where(~((tem_intpl>= 400) & (vap_rho_intpl > 0)), vap_rho_intpl)
+#
+# Col_vap_cold = zeros(intpl_numx)
+# Col_vap_cold = sum(vap_cold_intpl*tau_ir_1*dz,axis = 0)*2.0 *(2*pi*xx_exp*L_norm)*UNIT_SIGMA/(18.0*cons.m_p.cgs.value)
+#
+# Col_vap_warm = zeros(intpl_numx)
+# Col_vap_warm = sum(vap_warm_intpl*tau_ir_1*dz,axis = 0)*2.0 *(2*pi*xx_exp*L_norm)*UNIT_SIGMA/(18.0*cons.m_p.cgs.value)
+#
+# Col_vap_hot = zeros(intpl_numx)
+# Col_vap_hot = sum(vap_hot_intpl*tau_ir_1*dz,axis = 0)*2.0 *(2*pi*xx_exp*L_norm)*UNIT_SIGMA/(18.0*cons.m_p.cgs.value)  
+#
+# plt.figure(figsize=(10, 6))
+# plt.plot(xx_exp, Col_vap_cold, color = 'blue', lw = 2, label = r'cold')
+# plt.plot(xx_exp, Col_vap_warm, color = 'orange', lw = 2, label = r'warm')
+# plt.plot(xx_exp, Col_vap_hot, color = 'red', lw = 2, label = r'hot')
+# plt.xlabel(r'$R$ [AU]', fontsize = 13)
+# plt.ylabel(r'Col$_{\rm vap}$ [molecules]', fontsize = 13)
+# plt.yscale('log')
+# plt.xlim(0.3, 2.0)
+# plt.legend(frameon=True, fontsize=12)
+# plt.savefig('./plots/col_vap_temp_{:05d}.png'.format(int(filenum)), dpi=100, bbox_inches='tight')
+# plt.close()
 
 
 if singlepop: 
@@ -1599,13 +1600,13 @@ ax[0].contour(x_xz_c,y_xz_c, dust_1_rho_xz/rho_xz,levels = [d2g_snow], cmap = 'B
 ax[0].contour(x_xz_c,y_xz_c, dust_3_rho_xz/rho_xz,levels = [d2g_snow], cmap = 'Greens_r', alpha = 0.7, linewidths = 3.0)
 # ax[0].contour(x_xz_c,y_xz_c,r_snow_2d(tem_xz,rho_xz,0.4) ,levels = [1.e-3,1.0,1.e3], cmap = 'Greens_r', alpha = 0.7, linewidths = 5.0)
 
-# normalized lw of flux
-lw_flx_ice =sqrt(ice_flx_x_xz**2 + ice_flx_z_xz**2)/normal2
-lw_flx_ice1 = sqrt(ice1_flx_x_xz**2 + ice1_flx_z_xz**2)/normal2
-lw_flx_water = sqrt(water_flx_x_xz**2 + water_flx_z_xz**2)/normal2
-lw_flx_ice = 2.0*sqrt(lw_flx_ice)
-lw_flx_ice1 = 2.0*sqrt(lw_flx_ice1)
-lw_flx_water = 2.0*sqrt(lw_flx_water)
+# # normalized lw of flux
+# lw_flx_ice =sqrt(ice_flx_x_xz**2 + ice_flx_z_xz**2)/normal2
+# lw_flx_ice1 = sqrt(ice1_flx_x_xz**2 + ice1_flx_z_xz**2)/normal2
+# lw_flx_water = sqrt(water_flx_x_xz**2 + water_flx_z_xz**2)/normal2
+# lw_flx_ice = 2.0*sqrt(lw_flx_ice)
+# lw_flx_ice1 = 2.0*sqrt(lw_flx_ice1)
+# lw_flx_water = 2.0*sqrt(lw_flx_water)
 
 # sublimation / condensation rate
 P_eq = P_eq0*exp(-T_a/tem_xz)
@@ -1683,8 +1684,8 @@ for i in range(len(list(ax))):
     ax[i].set_ylim(0,zs)
     # ax[i].set_aspect(1)
 
-ax[0].set_ylim(0,0.1)
-ax[1].set_ylim(0,0.1)
+ax[0].set_ylim(0,0.15)
+ax[1].set_ylim(0,0.15)
 
 ax[0].set_ylabel('$z$ [au]',fontsize =15)
 ax[1].set_ylabel('$z$ [au]',fontsize =15)
@@ -1707,8 +1708,8 @@ axs[1, 1] = fig.add_subplot(grid[1, 1])
 
 xin = 0.6 
 xout = 3.0 
-yin = -0.1 
-yout = 0.1 
+yin = -0.15 
+yout = 0.15 
 for ax in axs.flatten():
     ax.set_xlim(xin, xout)
     ax.set_ylim(yin, yout)
@@ -1762,7 +1763,9 @@ axs[1,0].contour(x_xz_c,-y_xz_c, dust_1_rho_xz/rho_xz,levels = [d2g_snow],colors
 axs[1,0].text(0.05, 0.95, 'Pebbles', transform=axs[1,0].transAxes, fontsize=18, va='top', ha='left')
 axs[1,0].text(0.05, 0.05, 'Dust', transform=axs[1,0].transAxes, fontsize=18, va='bottom', ha='left')
 axs[1,0].set_xlabel(r'$R$ [AU]', fontsize = 12)
-# axs[1,0].plot([0.8, 0.8, 1.3, 1.3, 0.8], [-0.04, 0.04, 0.04, -0.04, -0.04], color='r', lw=3, ls='-', zorder=20)
+# axs[1,0].plot([1.2,1.2, 1.6, 1.6, 1.2], [-0.04, 0.04, 0.04, -0.04, -0.04], color='r', lw=3, ls='-', zorder=20)
+# axs[1,1].plot([1.2,1.2, 1.6, 1.6, 1.2], [-0.04, 0.04, 0.04, -0.04, -0.04], color='r', lw=3, ls='-', zorder=20)
+
 
 # axs[1,0].streamplot(x1_exp_half,x3_exp, 
 #                     flx_x_xz/normal2, flx_z_xz/normal2, 
@@ -1782,7 +1785,8 @@ axs[1,0].streamplot(x1_exp_half,x3_exp,
 axs[1,0].streamplot(x1_exp_half,z_neg, 
                     ice_flx_x_xz[::-1,:]/normal2,
                     - ice_flx_z_xz[::-1,:]/normal2,
-                    linewidth = lw_flx_ice[::-1,:], arrowstyle = '->', density = 1.0, broken_streamlines = True, color ='blue',zorder=4)
+                    linewidth = lw_flx_ice[::-1,:], arrowstyle = '->',
+                    density = 1.0, broken_streamlines = True, color ='blue',zorder=4)
 axs[1,0].streamplot(x1_exp_half,z_neg, 
                     water_flx_x_xz[::-1,:]/normal2, 
                     - water_flx_z_xz[::-1,:]/normal2,

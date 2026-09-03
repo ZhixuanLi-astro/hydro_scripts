@@ -163,4 +163,10 @@ if __name__ == "__main__":
     Hratio1 = Hd1 / Hg_ref
 
     # --- write to input file ---
-    write_athinput_dust(inputfile, m0, m1, St0, St1, Hratio0, Hratio1)
+    #first ask whether the user want to overwrite the input file 
+    input = input("Do you want to overwrite the input file {}? (y/n) ".format(inputfile))
+    if input.lower() == 'y':
+        write_athinput_dust(inputfile, m0, m1, St0, St1, Hratio0, Hratio1)
+    else:
+        print("Input file not modified.")
+

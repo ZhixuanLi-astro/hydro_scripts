@@ -363,11 +363,12 @@ def load_run(dir_path, nstep):
 # ══════════════════════════════════════════════════════════════════════════════
 #  Load both runs
 # ══════════════════════════════════════════════════════════════════════════════
-BASE = '/home/lzx/Science/hydro/athena_works/'
+BASE = '../../athena_works/'
 
-d1 = load_run(BASE + 'single_lowa/', 522)
-d2 = load_run(BASE + 'low_alpha/',  852)
-d3 = load_run(BASE + 'passive_test/', 1041)
+d1 = load_run(BASE + 'DAS/', 530)
+d2 = load_run(BASE + 'DPS/', 530)
+d3 = load_run(BASE + 'DAR/', 530)
+d4 = load_run(BASE + 'DPR/', 530)
 
 # ── Col_vap bar comparison figure — all 3 bars in ONE panel ─────────────────
 fig_bar, ax_bar = plt.subplots(figsize=(14, 7))
@@ -377,9 +378,10 @@ ax_bar.set_xlim(0.3, 3.5)
 bar_height = 0.4
 
 cases = [
-    (d1, '1 pop 1e-3',    2.0),
-    (d2, '2 pop 1e-3',      3.5),
-    (d3, '2 pop 3e-3',  5.0),
+    (d1, '1 pop active',    2.0),
+    (d2, '1 pop passive',      3.5),
+    (d3, '2 pop active',  5.0),
+    (d4, '2 pop passive',  6.5),
 ]
 
 def _find_crossings(x, y, thresh):
