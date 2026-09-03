@@ -374,14 +374,21 @@ def load_run(dir_path, nstep):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  Load both runs
+#  Load all runs once — every figure below reuses these in-memory dicts
 # ══════════════════════════════════════════════════════════════════════════════
 BASE = '../../athena_works/'
+NSTEP = 530
 
-d1 = load_run(BASE + 'DAS/', 530)
-d2 = load_run(BASE + 'DPS/', 530)
-d3 = load_run(BASE + 'DAR/', 530)
-d4 = load_run(BASE + 'DPR/', 530)
+data_530 = {}
+for run in ('DAS', 'DPS', 'DAR', 'DPR'):
+    print(f'Loading {run} @ {NSTEP} ...')
+    data_530[run] = load_run(BASE + run + '/', NSTEP)
+
+# short aliases used by the figures below
+d1 = data_530['DAS']   # single-pop active
+d2 = data_530['DPS']   # single-pop passive
+d3 = data_530['DAR']   # two-pop active
+d4 = data_530['DPR']   # two-pop passive
 
 # ── Col_vap bar comparison figure — all 3 bars in ONE panel ─────────────────
 fig_bar, ax_bar = plt.subplots(figsize=(14, 7))
@@ -1006,17 +1013,13 @@ runs_2ddust = [('DPS', 'passive, single-pop'),
                ('DPR', 'passive, two-pop'),
                ('DAS', 'active,  single-pop'),
                ('DAR', 'active,  two-pop')]
-nstep_2ddust = 530
 
 figC = plt.figure(figsize=(15, 17))
 gsC = gridspec.GridSpec(4, 2, figure=figC, hspace=0.30, wspace=0.10)
 axC = [[figC.add_subplot(gsC[i, j]) for j in range(2)] for i in range(4)]
 
-run_data = []
-for (name, tag) in runs_2ddust:
-    print(f'Loading {name} @ {nstep_2ddust} ...')
-    dd = load_run(BASE + name + '/', nstep_2ddust)
-    run_data.append((name, tag, dd))
+# data_530 was loaded once above — reuse it (no second read of the run files)
+run_data = [(name, tag, data_530[name]) for (name, tag) in runs_2ddust]
 
 c_ice_reps, c_vap_reps, c_comp_reps = [], [], []
 for row, (name, tag, dd) in enumerate(run_data):
