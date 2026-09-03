@@ -175,6 +175,19 @@ def load_run(dir_path, nstep):
         d['ice_rho_mod'][iid] = dust_rho_mod_xz.get(iid, zeros_like(rho_xz))
         d['ice_rho_xz'][iid]  = dust_rho_xz.get(iid, zeros_like(rho_xz))
 
+    # silicate densities per population (sil id = 2*p+2), for water-comp maps
+    d['sil_rho_mod'] = {}; d['sil_rho_xz'] = {}
+    for sid in sil_ids:
+        d['sil_rho_mod'][sid] = dust_rho_mod_xz.get(sid, zeros_like(rho_xz))
+        d['sil_rho_xz'][sid]  = dust_rho_xz.get(sid, zeros_like(rho_xz))
+
+    # water (ice) mass fraction per population: f_H2O = rho_ice/(rho_ice+rho_sil)
+    d['watercomp'] = {}
+    for p, iid in enumerate(ice_ids):
+        sid = 2*p + 2
+        den = d['ice_rho_xz'][iid] + d['sil_rho_xz'].get(sid, zeros_like(rho_xz))
+        d['watercomp'][p] = where(den > 0.0, d['ice_rho_xz'][iid]/den, 0.0)
+
     d['d2g_snow'] = d2g_snow
 
     # ── optical depth τ_ir ──
@@ -812,3 +825,249 @@ print(f"low_alpha    (t={d2['simu_time']:.0f} yr):")
 print(f"  cold (T<150K):  {mc2/M_NS:.3f} NS  ")
 print(f"  warm (150-400K): {mw2/M_NS:.3f} NS ")
 print(f"  hot  (T>400K):  {mh2/M_NS:.3f} NS  ")
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  compare_2ddust:  DPS / DPR / DAS / DAR   (4 rows x 2 columns)
+#  Column A: rho map (vapor RdPu + ice Blues + streamlines + snowline contour)
+#  Column B: water (ice) mass fraction f_H2O
+#  single-pop runs (DPS, DAS): upper-half style, z in [0, 0.15]
+#  two-pop runs  (DPR, DAR):  mirrored two-hemisphere style, z in [-0.15, 0.15]
+#  shared colour bars at the TOP of each column
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _rho_levels_vap():
+    return logspace(-14, -10, 15)
+
+def _rho_levels_ice():
+    return logspace(-14, log10(3e-11), 20)
+
+def _wcomp_levels():
+    return linspace(0.4, 0.99, 16)
+
+
+def plot_2ddust_rho_panel(ax, d):
+    """Left column: vapor (RdPu) + ice (Blues) density map with streamlines.
+
+    two-pop: mirrored hemispheres (upper = pop1 'Pebbles', lower = pop0 'Dust')
+    single-pop: upper-half only (no mirroring), z in [0, 0.15]
+    Returns (c_ice, c_vap) mappables for the column colour bars.
+    """
+    is2 = (d['N_pop'] >= 2)
+    xmin = maximum(0.5, d['rin']/d['L_norm'])
+    xmax = minimum(3.0, d['rout']/d['L_norm'])
+
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(-0.15, 0.15) if is2 else ax.set_ylim(0.0, 0.15)
+
+    vap_mod = d['vap_rho_mod'] * d['UNIT_DEN']
+    iid_lo = d['ice_ids'][0]                       # pop0
+    iid_hi = d['ice_ids'][1] if is2 else None      # pop1 (two-pop only)
+    ice_lo = d['ice_rho_mod'][iid_lo] * d['UNIT_DEN']
+    ice_hi = d['ice_rho_mod'][iid_hi] * d['UNIT_DEN'] if is2 else None
+
+    lv_vap = _rho_levels_vap()
+    lv_ice = _rho_levels_ice()
+
+    # ---- vapor: full disk (both halves for two-pop; single upper only) ----
+    cvap = ax.contourf(d['x_xz_c'], d['y_xz_c'], vap_mod, levels=lv_vap,
+                       norm=LogNorm(), cmap='RdPu', alpha=0.7, extend='both',
+                       zorder=3, antialiased=True)
+    if is2:
+        ax.contourf(d['x_xz_c'], -d['y_xz_c'], vap_mod, levels=lv_vap,
+                    norm=LogNorm(), cmap='RdPu', alpha=0.7, extend='both',
+                    zorder=3, antialiased=True)
+
+    # ---- ice ----
+    # single-pop: one population over the panel
+    # two-pop   : upper = large-pebble population, lower = small-dust population
+    if not is2:
+        cice = ax.contourf(d['x_xz_c'], d['y_xz_c'], ice_lo, levels=lv_ice,
+                           norm=LogNorm(), cmap='Blues', alpha=1.0,
+                           extend='both', antialiased=True, zorder=4)
+    else:
+        cice = ax.contourf(d['x_xz_c'], d['y_xz_c'], ice_hi, levels=lv_ice,
+                           norm=LogNorm(), cmap='Blues', alpha=1.0,
+                           extend='both', antialiased=True, zorder=4)
+        ax.contourf(d['x_xz_c'], -d['y_xz_c'], ice_lo, levels=lv_ice,
+                    norm=LogNorm(), cmap='Blues', alpha=1.0, extend='both',
+                    antialiased=True, zorder=4)
+        ax.axhline(0.0, c='k', lw=4., zorder=15)
+
+    # ---- snowline contour: (rho_ice / rho_gas) = d2g_snow ----
+    # single-pop: contour of the single population (Blues_r, as in plot.py)
+    # two-pop   : upper = large-pebble pop (darkblue, lw=5), lower = small-dust pop
+    if not is2:
+        ax.contour(d['x_xz_c'], d['y_xz_c'],
+                   d['ice_rho_xz'][iid_lo]/d['rho_xz'],
+                   levels=[d['d2g_snow']], cmap='Blues_r', alpha=0.7,
+                   linewidths=3.0, zorder=5)
+    else:
+        ax.contour(d['x_xz_c'], d['y_xz_c'],
+                   d['ice_rho_xz'][iid_hi]/d['rho_xz'],
+                   levels=[d['d2g_snow']], colors='darkblue', alpha=0.7,
+                   linewidths=5.0, zorder=5)
+        ax.contour(d['x_xz_c'], -d['y_xz_c'],
+                   d['ice_rho_xz'][iid_lo]/d['rho_xz'],
+                   levels=[d['d2g_snow']], colors='darkblue', alpha=0.7,
+                   linewidths=5.0, zorder=4)
+
+    # ---- scale heights ----
+    if is2:
+        ax.plot(d['xx_exp'], -d['yy0'], '--', c='k', lw=1, zorder=10)
+        ax.plot(d['xx_exp'],  d['yy1'], '--', c='k', lw=1, zorder=10)
+    else:
+        ax.plot(d['xx_exp'], d['yy0'], '--', c='k', lw=1, zorder=10)
+        ax.plot(d['xx_exp'], d['yy_g'], '-.', c='gray', lw=1, zorder=10)
+
+    # ---- streamlines ----
+    Xg = d['x1_exp_half']; Zg = d['x3_exp']
+    n2 = d['normal2']
+    # pop0 ice flux (blue); pop1 ice flux (cyan-blue); water vapor flux (pink)
+    if is2:
+        ax.streamplot(Xg, Zg, d['ice1_flx_x_xz']/n2, d['ice1_flx_z_xz']/n2,
+                      linewidth=d['lw_flx_ice1'], arrowstyle='->',
+                      density=1.0, broken_streamlines=True,
+                      color='blue', zorder=4)
+        ax.streamplot(Xg, Zg, d['water_flx_x_xz']/n2, d['water_flx_z_xz']/n2,
+                      linewidth=d['lw_flx_water'], arrowstyle='->',
+                      density=2.0, broken_streamlines=True,
+                      color='#d6336c', zorder=4)
+        z_neg = -d['x3_exp'][::-1]
+        ax.streamplot(Xg, z_neg, d['ice_flx_x_xz'][::-1, :]/n2,
+                      -d['ice_flx_z_xz'][::-1, :]/n2,
+                      linewidth=d['lw_flx_ice'][::-1, :], arrowstyle='->',
+                      density=1.0, broken_streamlines=True,
+                      color='blue', zorder=4)
+        ax.streamplot(Xg, z_neg, d['water_flx_x_xz'][::-1, :]/n2,
+                      -d['water_flx_z_xz'][::-1, :]/n2,
+                      linewidth=d['lw_flx_water'][::-1, :], arrowstyle='->',
+                      density=2.0, broken_streamlines=True,
+                      color='#d6336c', zorder=4)
+        ax.text(0.05, 0.95, 'Pebbles', transform=ax.transAxes, fontsize=14,
+                va='top', ha='left')
+        ax.text(0.05, 0.05, 'Dust', transform=ax.transAxes, fontsize=14,
+                va='bottom', ha='left')
+    else:
+        ax.streamplot(Xg, Zg, d['ice_flx_x_xz']/n2, d['ice_flx_z_xz']/n2,
+                      linewidth=d['lw_flx_ice'], arrowstyle='->',
+                      density=1.0, broken_streamlines=True,
+                      color='blue', zorder=4)
+        ax.streamplot(Xg, Zg, d['water_flx_x_xz']/n2, d['water_flx_z_xz']/n2,
+                      linewidth=d['lw_flx_water'], arrowstyle='->',
+                      density=1.0, broken_streamlines=True,
+                      color='#d6336c', zorder=4)
+
+    ax.set_xlim(xmin, xmax)
+    return cice, cvap
+
+
+def plot_2ddust_comp_panel(ax, d):
+    """Right column: water (ice) mass fraction f_H2O = rho_ice/(rho_ice+rho_sil).
+
+    two-pop: upper = pop1, lower = pop0 (0.5 contour in each half)
+    single-pop: the single population (0.5 contour)
+    Returns the f_H2O mappable for the column colour bar.
+    """
+    is2 = (d['N_pop'] >= 2)
+    xmin = maximum(0.5, d['rin']/d['L_norm'])
+    xmax = minimum(3.0, d['rout']/d['L_norm'])
+
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(-0.15, 0.15) if is2 else ax.set_ylim(0.0, 0.15)
+
+    lv = _wcomp_levels()
+    wc0 = d['watercomp'][0]
+    wc1 = d['watercomp'][1] if is2 else None
+
+    if not is2:
+        ccomp = ax.contourf(d['x_xz_c'], d['y_xz_c'], wc0, levels=lv,
+                            cmap='Blues', alpha=0.8, extend='both')
+        ax.contour(d['x_xz_c'], d['y_xz_c'], wc0, levels=[0.5],
+                   colors='k', linewidths=2.0)
+    else:
+        ccomp = ax.contourf(d['x_xz_c'], d['y_xz_c'], wc1, levels=lv,
+                            cmap='Blues', alpha=0.8, extend='both')
+        ax.contourf(d['x_xz_c'], -d['y_xz_c'], wc0, levels=lv,
+                    cmap='Blues', alpha=0.8, extend='both')
+        ax.contour(d['x_xz_c'],  d['y_xz_c'], wc1, levels=[0.5],
+                   colors='k', linewidths=2.0)
+        ax.contour(d['x_xz_c'], -d['y_xz_c'], wc0, levels=[0.5],
+                   colors='k', linewidths=2.0)
+        ax.axhline(0.0, c='k', lw=4., zorder=15)
+
+    ax.set_xlim(xmin, xmax)
+    return ccomp
+
+
+# ── build the 4x2 comparison figure ─────────────────────────────────────────
+runs_2ddust = [('DPS', 'passive, single-pop'),
+               ('DPR', 'passive, two-pop'),
+               ('DAS', 'active,  single-pop'),
+               ('DAR', 'active,  two-pop')]
+nstep_2ddust = 530
+
+figC = plt.figure(figsize=(15, 17))
+gsC = gridspec.GridSpec(4, 2, figure=figC, hspace=0.30, wspace=0.10)
+axC = [[figC.add_subplot(gsC[i, j]) for j in range(2)] for i in range(4)]
+
+run_data = []
+for (name, tag) in runs_2ddust:
+    print(f'Loading {name} @ {nstep_2ddust} ...')
+    dd = load_run(BASE + name + '/', nstep_2ddust)
+    run_data.append((name, tag, dd))
+
+c_ice_reps, c_vap_reps, c_comp_reps = [], [], []
+for row, (name, tag, dd) in enumerate(run_data):
+    is2 = dd['N_pop'] >= 2
+
+    # left: rho map
+    cice, cvap = plot_2ddust_rho_panel(axC[row][0], dd)
+    axC[row][0].set_ylabel(r'$z$ [AU]', fontsize=12)
+    axC[row][0].text(0.02, 1.02, name, transform=axC[row][0].transAxes,
+                     fontsize=15, fontweight='bold', va='bottom', ha='left')
+
+    # right: water-comp map
+    ccomp = plot_2ddust_comp_panel(axC[row][1], dd)
+    if is2:
+        axC[row][1].text(0.05, 0.95, 'Pebbles', transform=axC[row][1].transAxes,
+                         fontsize=14, va='top', ha='left')
+        axC[row][1].text(0.05, 0.05, 'Dust', transform=axC[row][1].transAxes,
+                         fontsize=14, va='bottom', ha='left')
+
+    c_ice_reps.append(cice); c_vap_reps.append(cvap); c_comp_reps.append(ccomp)
+
+for i in range(4):
+    if i < 3:
+        axC[i][0].set_xticklabels([])
+        axC[i][1].set_xticklabels([])
+    else:
+        axC[i][0].set_xlabel(r'$R$ [AU]', fontsize=12)
+        axC[i][1].set_xlabel(r'$R$ [AU]', fontsize=12)
+
+# column titles
+axC[0][0].set_title(r'$\rho_{\rm ice}$ / $\rho_{\rm vap}$', fontsize=14)
+axC[0][1].set_title(r'$f_{\rm H_2O}$', fontsize=14)
+
+# ── shared colour bars at the top of each column ─────────────────────────────
+caxI = figC.add_axes([0.16, 0.945, 0.18, 0.015])
+cbar_ice = figC.colorbar(c_ice_reps[0], cax=caxI, orientation='horizontal')
+cbar_ice.set_ticks([1e-13, 1e-12, 1e-11])
+cbar_ice.set_ticklabels([r'$10^{-13}$', r'$10^{-12}$', r'$10^{-11}$'], fontsize=9)
+cbar_ice.ax.set_title(r'$\rho_{\rm ice}$ [g cm$^{-3}$]', fontsize=11)
+
+caxV = figC.add_axes([0.42, 0.945, 0.18, 0.015])
+cbar_vap = figC.colorbar(c_vap_reps[0], cax=caxV, orientation='horizontal')
+cbar_vap.set_ticks([1e-13, 1e-12, 1e-11])
+cbar_vap.set_ticklabels([r'$10^{-13}$', r'$10^{-12}$', r'$10^{-11}$'], fontsize=9)
+cbar_vap.ax.set_title(r'$\rho_{\rm vap}$ [g cm$^{-3}$]', fontsize=11)
+
+caxC = figC.add_axes([0.66, 0.945, 0.16, 0.015])
+cbar_comp = figC.colorbar(c_comp_reps[0], cax=caxC, orientation='horizontal')
+cbar_comp.set_ticks([0.4, 0.5, 0.7, 0.9])
+cbar_comp.set_ticklabels([r'$0.4$', r'$0.5$', r'$0.7$', r'$0.9$'], fontsize=9)
+cbar_comp.ax.set_title(r'$f_{\rm H_2O}$', fontsize=11)
+cbar_comp.ax.axvline(0.5, color='k', linewidth=2)
+
+figC.savefig('./plots/compare_2ddust.png', dpi=300, bbox_inches='tight')
+print('Saved: ./plots/compare_2ddust.png')
+plt.close(figC)
