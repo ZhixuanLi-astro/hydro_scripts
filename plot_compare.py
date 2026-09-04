@@ -1085,3 +1085,87 @@ cbar_comp.ax.axvline(0.5, color='k', linewidth=2)
 figC.savefig('./plots/compare_2ddust.png', dpi=300, bbox_inches='tight')
 print('Saved: ./plots/compare_2ddust.png')
 plt.close(figC)
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  fig_snow_compare: 2 rows x 4 columns (columns = DPS / DPR / DAS / DAR)
+#  upper row : column densities  Sigma_gas, Sigma_ice, Sigma_sil, Sigma_vap
+#  lower row : midplane solid-to-gas (black) and vapor-to-gas (red) ratios
+#  (quantities & colours follow plot.py fig_snow_2d)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _sigma_arrays(d):
+    """Column densities [g cm^-2] for gas, ice, silicate, vapor.
+
+    xz arrays are indexed [rad, theta]; the slice covers the upper
+    hemisphere, and at fixed radius the cell z-extent is
+    dz = R * |cos(thf[j+1]) - cos(thf[j])|; the full column is
+    2 x the integral (mirror symmetry).
+    """
+    rho_xz = d['rho_xz']                                             # (n_r, n_t)
+    dcos = fabs(cos(d['theta_f'][1:]) - cos(d['theta_f'][:-1]))      # (n_t,)
+    dz_cm = d['rad'][:, None] * dcos[None, :] * AU                   # (n_r, n_t)
+
+    def col(rhov):
+        return 2.0 * sum(rhov * dz_cm, axis=1) * d['UNIT_DEN']
+
+    sig_gas = col(rho_xz)
+    sig_ice = sum([col(d['ice_rho_xz'][iid]) for iid in d['ice_ids']], axis=0)
+    sig_sil = sum([col(d['sil_rho_xz'][sid]) for sid in d['sil_rho_xz']], axis=0)
+    sig_vap = col(d['vap_rho_xz'])
+    return sig_gas, sig_ice, sig_sil, sig_vap
+
+
+def _midplane_ratios(d):
+    """Midplane (theta_max row) solid/gas and vapor/gas density ratios."""
+    jm = int(argmax(d['theta']))
+    rho_m = d['rho_xz'][:, jm]
+    solid_m = sum([d['ice_rho_xz'][iid][:, jm] for iid in d['ice_ids']], axis=0)
+    solid_m = solid_m + sum([d['sil_rho_xz'][sid][:, jm]
+                             for sid in d['sil_rho_xz']], axis=0)
+    denom = where(rho_m > 0.0, rho_m, 1.0)
+    d2g = where(rho_m > 0.0, solid_m / denom, 0.0)
+    v2g = where(rho_m > 0.0, d['vap_rho_xz'][:, jm] / denom, 0.0)
+    return d2g, v2g
+
+
+figS, axS = plt.subplots(2, 4, figsize=(18, 9), sharex=True,
+                         gridspec_kw={'hspace': 0.10, 'wspace': 0.20})
+
+for k, (name, tag, dd) in enumerate(run_data):
+    rr = dd['rad']                                   # AU, native grid
+
+    # ---- upper: surface densities (reference colours from plot.py colD) ----
+    sig_gas, sig_ice, sig_sil, sig_vap = _sigma_arrays(dd)
+    axS[0][k].plot(rr, sig_gas, c='black',      lw=2.5, label=r'$\Sigma_{\rm gas}$')
+    axS[0][k].plot(rr, sig_ice, c='tab:blue',   lw=2.5, label=r'$\Sigma_{\rm ice}$')
+    axS[0][k].plot(rr, sig_sil, c='tab:orange', lw=2.5, label=r'$\Sigma_{\rm sil}$')
+    axS[0][k].plot(rr, sig_vap, c='tab:purple', lw=2.5, label=r'$\Sigma_{\rm vap}$')
+    axS[0][k].set_yscale('log')
+    axS[0][k].set_ylim(1e-5, 1e4)      # shared across the 4 columns
+    axS[0][k].set_xlim(0.5, 3.0)
+    axS[0][k].set_title(f'{name}   ($t={dd["simu_time"]:.0f}$ yr)',
+                        fontsize=12)
+
+    # ---- lower: midplane ratios ----
+    d2g, v2g = _midplane_ratios(dd)
+    axS[1][k].plot(rr, d2g, c='k',   lw=3.0, label=r'$(s/g)_{\rm mid}$')
+    axS[1][k].plot(rr, v2g, c='red', lw=3.0, label=r'$(v/g)_{\rm mid}$')
+    axS[1][k].set_yscale('log')
+    axS[1][k].set_ylim(1e-6, 0.2)      # shared across the 4 columns
+    axS[1][k].set_xlim(0.5, 3.0)
+    axS[1][k].set_xlabel(r'$R$ [AU]', fontsize=12)
+
+    if k == 0:
+        axS[0][k].set_ylabel(r'$\Sigma$ [g cm$^{-2}$]', fontsize=12)
+        axS[1][k].set_ylabel('midplane ratio', fontsize=12)
+        axS[0][k].legend(fontsize=9, loc='upper right', framealpha=0.9)
+        axS[1][k].legend(fontsize=9, loc='lower left', framealpha=0.9,
+                         ncol=2)
+        axS[0][k].annotate('(a)', xy=(0.02, 0.95), xycoords='axes fraction',
+                           fontsize=14, va='top')
+        axS[1][k].annotate('(b)', xy=(0.02, 0.95), xycoords='axes fraction',
+                           fontsize=14, va='top')
+
+figS.savefig('./plots/fig_snow_compare.png', dpi=300, bbox_inches='tight')
+print('Saved: ./plots/fig_snow_compare.png')
+plt.close(figS)
