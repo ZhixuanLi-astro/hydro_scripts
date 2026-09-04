@@ -377,7 +377,7 @@ def load_run(dir_path, nstep):
 #  Load all runs once — every figure below reuses these in-memory dicts
 # ══════════════════════════════════════════════════════════════════════════════
 BASE = '../../athena_works/'
-NSTEP = 530
+NSTEP = 694 
 
 data_530 = {}
 for run in ('DAS', 'DPS', 'DAR', 'DPR'):
@@ -687,10 +687,10 @@ def plot_vap_obs(ax, d, show_legend=True):
         ice_ratio = ice_sum / d['rho_xz']
 
     ice_colors = ['white', 'skyblue', 'deepskyblue', 'dodgerblue', 'blue', 'darkblue']
-    # crho1 = ax.contourf(d['x_xz_c'], d['y_xz_c'], ice_ratio,
-    #             levels=logspace(log10(0.001), log10(0.05), 7),
-    #             norm=LogNorm(), antialiased=True,
-    #             colors=ice_colors, alpha=0.7, extend='both', zorder=4)
+    crho1 = ax.contourf(d['x_xz_c'], d['y_xz_c'], ice_ratio,
+                levels=logspace(log10(0.0005), log10(0.05), 7),
+                norm=LogNorm(), antialiased=True,
+                colors=ice_colors, alpha=0.7, extend='both', zorder=4)
 
     # τ_ir = 1 contour
     ax.contour(d['x_xz_c'], d['y_xz_c'], d['tau_ir'],
@@ -783,7 +783,7 @@ def plot_vap_obs(ax, d, show_legend=True):
                 fontsize=20, color='purple', zorder=10,
                 fontweight='bold', rotation=20)
 
-    return crhov, C_Tem, m_cold_tot, m_warm_tot, m_hot_tot
+    return crhov, crho1, C_Tem, m_cold_tot, m_warm_tot, m_hot_tot
 
 
 # ── build vap_obs comparison figure ──────────────────────────────────────────
@@ -794,28 +794,28 @@ ax3 = fig2.add_subplot(gs[0])
 ax4 = fig2.add_subplot(gs[1], sharey=ax3)
 plt.setp(ax4.get_yticklabels(), visible=False)
 
-crhov1,  C_Tem1, mc1, mw1, mh1 = plot_vap_obs(ax3, d1, show_legend=True)
+crhov1,crho1_1, C_Tem1, mc1, mw1, mh1 = plot_vap_obs(ax3, d3, show_legend=True)
 
 ax4.set_xlabel(r'$R$ [AU]', fontsize=12)
-crhov2,  C_Tem2, mc2, mw2, mh2 = plot_vap_obs(ax4, d2, show_legend=False)
+crhov2,crho1_2, C_Tem2, mc2, mw2, mh2 = plot_vap_obs(ax4, d4, show_legend=False)
 ax4.set_ylabel('')
 
 # ── three colorbars on the right (pad values from original plot.py) ──────────
 cbarv = fig2.colorbar(crhov2, ax=ax4, orientation='vertical',
-                       pad=-0.15, shrink=0.45, aspect=12, anchor=(0, 1))
+                       pad=-0.15, shrink=0.3, aspect=12, anchor=(0, 1))
 cbarv.ax.set_ylabel(r'$\rho_{vap}$ [g cm$^{-3}$]', fontsize=12)
 cbarv.set_ticks(logspace(-20, -10, 6))
 cbarv.set_ticklabels([r'$10^{-20}$', r'$10^{-18}$', r'$10^{-16}$',
                        r'$10^{-14}$', r'$10^{-12}$', r'$10^{-10}$'], fontsize=10)
 
-# cbar1 = fig2.colorbar(crho1_2, ax=ax4, orientation='vertical',
-#                        pad=-0.15, shrink=0.3, aspect=12, anchor=(0, 0.5))
-# cbar1.ax.set_ylabel(r'$\rho_{ice}/\rho_{gas}$', fontsize=12)
-# cbar1.set_ticks([0.001, 0.05])
-# cbar1.set_ticklabels(['0.001', '0.05'], fontsize=10)
+cbar1 = fig2.colorbar(crho1_2, ax=ax4, orientation='vertical',
+                       pad=-0.15, shrink=0.3, aspect=12, anchor=(0, 0.5))
+cbar1.ax.set_ylabel(r'$\rho_{ice}/\rho_{gas}$', fontsize=12)
+cbar1.set_ticks([0.001, 0.01, 0.05])
+cbar1.set_ticklabels(['0.001', '0.01', '0.05'], fontsize=10)
 
 cbarT = fig2.colorbar(C_Tem2, ax=ax4, orientation='vertical',
-                       pad=0.02, shrink=0.45, aspect=12, anchor=(0, 0))
+                       pad=0.02, shrink=0.3, aspect=12, anchor=(0, 0))
 cbarT.ax.set_ylabel(r'$T$ [K]', fontsize=12)
 
 fig2.savefig('./plots/compare_vap_obs.png', dpi=300, bbox_inches='tight')
@@ -858,7 +858,7 @@ def plot_2ddust_rho_panel(ax, d):
     """Left column: vapor (RdPu) + ice (Blues) density map with streamlines.
 
     two-pop: mirrored hemispheres (upper = pop1 'Pebbles', lower = pop0 'Dust')
-    single-pop: upper-half only (no mirroring), z in [0, 0.15]
+    single-pop: upper-half only (no mirroring), z in [0, 0.1]
     Returns (c_ice, c_vap) mappables for the column colour bars.
     """
     is2 = (d['N_pop'] >= 2)
@@ -866,7 +866,7 @@ def plot_2ddust_rho_panel(ax, d):
     xmax = minimum(3.0, d['rout']/d['L_norm'])
 
     ax.set_xlim(xmin, xmax)
-    ax.set_ylim(-0.15, 0.15) if is2 else ax.set_ylim(0.0, 0.15)
+    ax.set_ylim(-0.1, 0.1) if is2 else ax.set_ylim(0.0, 0.1)
 
     vap_mod = d['vap_rho_mod'] * d['UNIT_DEN']
     iid_lo = d['ice_ids'][0]                       # pop0
@@ -982,7 +982,7 @@ def plot_2ddust_comp_panel(ax, d):
     xmax = minimum(3.0, d['rout']/d['L_norm'])
 
     ax.set_xlim(xmin, xmax)
-    ax.set_ylim(-0.15, 0.15) if is2 else ax.set_ylim(0.0, 0.15)
+    ax.set_ylim(-0.1, 0.1) if is2 else ax.set_ylim(0.0, 0.1)
 
     lv = _wcomp_levels()
     wc0 = d['watercomp'][0]
@@ -991,17 +991,17 @@ def plot_2ddust_comp_panel(ax, d):
     if not is2:
         ccomp = ax.contourf(d['x_xz_c'], d['y_xz_c'], wc0, levels=lv,
                             cmap='Blues', alpha=0.8, extend='both')
-        ax.contour(d['x_xz_c'], d['y_xz_c'], wc0, levels=[0.5],
-                   colors='k', linewidths=2.0)
+        # ax.contour(d['x_xz_c'], d['y_xz_c'], wc0, levels=[0.5],
+        #            colors='k', linewidths=2.0)
     else:
         ccomp = ax.contourf(d['x_xz_c'], d['y_xz_c'], wc1, levels=lv,
                             cmap='Blues', alpha=0.8, extend='both')
         ax.contourf(d['x_xz_c'], -d['y_xz_c'], wc0, levels=lv,
                     cmap='Blues', alpha=0.8, extend='both')
-        ax.contour(d['x_xz_c'],  d['y_xz_c'], wc1, levels=[0.5],
-                   colors='k', linewidths=2.0)
-        ax.contour(d['x_xz_c'], -d['y_xz_c'], wc0, levels=[0.5],
-                   colors='k', linewidths=2.0)
+        # ax.contour(d['x_xz_c'],  d['y_xz_c'], wc1, levels=[0.5],
+        #            colors='k', linewidths=2.0)
+        # ax.contour(d['x_xz_c'], -d['y_xz_c'], wc0, levels=[0.5],
+        #            colors='k', linewidths=2.0)
         ax.axhline(0.0, c='k', lw=4., zorder=15)
 
     ax.set_xlim(xmin, xmax)
@@ -1031,7 +1031,7 @@ for row, (name, tag, dd) in enumerate(run_data):
     # left: rho map
     cice, cvap = plot_2ddust_rho_panel(axC[row][0], dd)
     axC[row][0].set_ylabel(r'$z$ [AU]', fontsize=12)
-    axC[row][0].text(0.02, 1.02, name, transform=axC[row][0].transAxes,
+    axC[row][0].text(0.02, 1.02, tag, transform=axC[row][0].transAxes,
                      fontsize=15, fontweight='bold', va='bottom', ha='left')
 
     # right: water-comp map
@@ -1044,7 +1044,7 @@ for row, (name, tag, dd) in enumerate(run_data):
 
     # same 0.05 step for every row, so the half-height single-pop rows keep
     # identical spacing to the two-pop rows
-    tickz = linspace(-0.15, 0.15, 7) if is2 else linspace(0.0, 0.15, 4)
+    tickz = linspace(-0.1, 0.1, 5) if is2 else linspace(0.0, 0.1, 3)
     axC[row][0].set_yticks(tickz)
     axC[row][1].set_yticks(tickz)
 
@@ -1059,28 +1059,28 @@ for i in range(4):
         axC[i][1].set_xlabel(r'$R$ [AU]', fontsize=12)
 
 # column titles
-axC[0][0].set_title(r'$\rho_{\rm ice}$ / $\rho_{\rm vap}$', fontsize=14)
-axC[0][1].set_title(r'$f_{\rm H_2O}$', fontsize=14)
+axC[0][1].set_title('Time = {:.1f} yr'.format(run_data[0][2]['simu_time'])
+                    , fontsize=14, loc = 'right')
 
 # ── shared colour bars at the top of each column ─────────────────────────────
-caxI = figC.add_axes([0.16, 0.945, 0.18, 0.015])
+caxI = figC.add_axes([0.1, 0.945, 0.23, 0.015])
 cbar_ice = figC.colorbar(c_ice_reps[0], cax=caxI, orientation='horizontal')
 cbar_ice.set_ticks([1e-13, 1e-12, 1e-11])
 cbar_ice.set_ticklabels([r'$10^{-13}$', r'$10^{-12}$', r'$10^{-11}$'], fontsize=9)
 cbar_ice.ax.set_title(r'$\rho_{\rm ice}$ [g cm$^{-3}$]', fontsize=11)
 
-caxV = figC.add_axes([0.42, 0.945, 0.18, 0.015])
+caxV = figC.add_axes([0.38, 0.945, 0.23, 0.015])
 cbar_vap = figC.colorbar(c_vap_reps[0], cax=caxV, orientation='horizontal')
 cbar_vap.set_ticks([1e-13, 1e-12, 1e-11])
 cbar_vap.set_ticklabels([r'$10^{-13}$', r'$10^{-12}$', r'$10^{-11}$'], fontsize=9)
 cbar_vap.ax.set_title(r'$\rho_{\rm vap}$ [g cm$^{-3}$]', fontsize=11)
 
-caxC = figC.add_axes([0.66, 0.945, 0.16, 0.015])
+caxC = figC.add_axes([0.66, 0.945, 0.23, 0.015])
 cbar_comp = figC.colorbar(c_comp_reps[0], cax=caxC, orientation='horizontal')
 cbar_comp.set_ticks([0.4, 0.5, 0.7, 0.9])
 cbar_comp.set_ticklabels([r'$0.4$', r'$0.5$', r'$0.7$', r'$0.9$'], fontsize=9)
 cbar_comp.ax.set_title(r'$f_{\rm H_2O}$', fontsize=11)
-cbar_comp.ax.axvline(0.5, color='k', linewidth=2)
+# cbar_comp.ax.axvline(0.5, color='k', linewidth=2)
 
 figC.savefig('./plots/compare_2ddust.png', dpi=300, bbox_inches='tight')
 print('Saved: ./plots/compare_2ddust.png')
