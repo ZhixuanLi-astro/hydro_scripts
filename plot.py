@@ -334,6 +334,11 @@ q_latent = data_uov['q_latent']
 q_diff = data_uov['q_diff']
 flx_vap_x1 = data_uov['flx_vap_x1']
 flx_vap_x2 = data_uov['flx_vap_x2']
+# [code-side split] diffusive part of the vapor flux (written by the pgen from
+# DustFluidsDiffusion::dustfluids_diffusion_flux); the advective part is
+# flx_vap_x1 - flx_vap_dif_x1 exactly. Falls back to zeros for older output files.
+flx_vap_dif_x1 = data_uov.get('flx_vap_dif_x1', zeros_like(flx_vap_x1))
+flx_vap_dif_x2 = data_uov.get('flx_vap_dif_x2', zeros_like(flx_vap_x2))
 flx_x1 = data_uov['flx_x1']
 flx_x2 = data_uov['flx_x2']
 
@@ -415,6 +420,8 @@ flx_ice_x1 *= dS_R* UNIT_Fm
 flx_vap_x1 *= dS_R* UNIT_Fm
 flx_ice_x2 *= dS_theta* UNIT_Fm
 flx_vap_x2 *= dS_theta* UNIT_Fm
+flx_vap_dif_x1 *= dS_R* UNIT_Fm       # [code-side split] diffusive part
+flx_vap_dif_x2 *= dS_theta* UNIT_Fm
 flx_x1 *= dS_R* UNIT_Fm
 flx_x2 *= dS_theta* UNIT_Fm
 
@@ -645,6 +652,8 @@ flux_sil1_x,flux_sil1_z,flux_sil1_z = v_Intpl_Sph2car(rad,theta,phi,xx_exp,array
 flux_sil1_x_intpl = flux_sil1_x[:,0,:]
 
 flux_vap_x,flux_vap_z,flux_vap_z = v_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0.0]),zz_exp,(flx_vap_x1/dS_R).T, (flx_vap_x2/dS_theta).T, 0.0*flx_vap_x2.T)
+flux_vap_dif_x,flux_vap_dif_z,flux_vap_dif_z2 = v_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0.0]),zz_exp,(flx_vap_dif_x1/dS_R).T, (flx_vap_dif_x2/dS_theta).T, 0.0*flx_vap_dif_x2.T)
+flux_vap_dif_x_intpl = flux_vap_dif_x[:,0,:]
 flux_vap_x_intpl = flux_vap_x[:,0,:]
 flux_vap_z_intpl = flux_vap_z[:,0,:]
 
@@ -1026,6 +1035,8 @@ for i in range(len(dthetaM.T)):
 flux_gas_face = sum((flux_gas_x_intpl - flux_vap_x_intpl)*dz,axis = 0) *2.0 *(2*pi*xx_exp*L_norm)  # remember to add up 2 wings
 flux_ice_face = sum(flux_ice_x_intpl*dz,axis = 0) *2.0 *(2*pi*xx_exp*L_norm)
 flux_vap_face = sum(flux_vap_x_intpl*dz,axis = 0) *2.0 *(2*pi*xx_exp*L_norm)
+flux_vap_dif_face = sum(flux_vap_dif_x_intpl*dz,axis = 0) *2.0 *(2*pi*xx_exp*L_norm)   # [code-side split]
+flux_vap_adv_face = flux_vap_face - flux_vap_dif_face                                   # exact advective part
 flux_ice1_face = sum(flux_ice1_x_intpl*dz,axis = 0) *2.0*(2*pi*xx_exp*L_norm)
 flux_sil_face = sum(flux_sil_x_intpl*dz,axis = 0)  *2.0*(2*pi*xx_exp*L_norm)
 flux_sil1_face = sum(flux_sil1_x_intpl*dz,axis = 0) *2.0*(2*pi*xx_exp*L_norm)
@@ -1553,8 +1564,12 @@ if singlepop:
     ax[2].plot(xx_exp,flux_vap_face*1e8,  lw =lwD['va'],color=colD['va'], alpha = alpD['va'], label = r'$\mathcal{F}_{\mathrm{vap}}$')
     ax[2].plot(xx_exp,flux_water_face*1e8,lw =3,color='cyan', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
     ax[2].plot(xx_exp,flux_gas_face*1e8,lw =3,color='grey', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{xy}}$')
-    ax[2].plot(xx_exp, flux_vap_adv*1e8, lw =1,color='tab:red', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,adv}}$')
-    ax[2].plot(xx_exp, (flux_vap_face - flux_vap_adv)*1e8, lw =1,color='tab:blue', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,dfi}}$')
+    # [code-side split] exact decomposition of the vapor flux
+    ax[2].plot(xx_exp, flux_vap_adv_face*1e8, lw =1,color='tab:red', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,adv}}$ (code)')
+    ax[2].plot(xx_exp, flux_vap_dif_face*1e8, lw =1,color='tab:blue', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,dif}}$ (code)')
+    # plot-side estimate (rho_v*v_r), kept for reference:
+    # ax[2].plot(xx_exp, flux_vap_adv*1e8, lw =1,color='tab:red', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,adv}}$')
+    # ax[2].plot(xx_exp, (flux_vap_face - flux_vap_adv)*1e8, lw =1,color='tab:blue', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,dfi}}$')
     ax[2].plot(xx_exp, flux_gas_adv*1e8, lw =1,color='k', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,adv}}$')
     ax[2].axvline(0.7, ls='dotted', c= 'black', lw=1)
     ax[2].axvline(0.6, ls='dotted', c= 'black', lw=1)
