@@ -1535,7 +1535,11 @@ if singlepop:
         kk = 'p2g_flux_'+str(i)
         p2g_flux_inp.append(athinputs['dust'][kk])
 
-    ax[2].set_yscale('symlog', linthresh = 1e-2)
+    flux_vap_adv = sum(dust_3_rho_intpl*dz*vx_intpl,axis = 0)*2.0 *(2*pi*xx_exp*L_norm)
+    flux_vap_adv *= UNIT_Fm
+    flux_gas_adv = sum(rho_intpl*dz*vx_intpl,axis = 0)*2.0 *(2*pi*xx_exp*L_norm)
+    flux_gas_adv *= UNIT_Fm
+    ax[2].set_yscale('symlog', linthresh = 1e-5)
     ax[2].plot(xx_exp,flux_ice_face*1e8, lw =lwD['si'],color='darkblue', alpha = alpD['si'], label = r'$\mathcal{F}_{\mathrm{ice}}$')
 # ax[2].plot(xx_exp,(flux_ice_face + flux_ice1_face)*1e8,lw =lwD['li'],color='blue', alpha = 1, label = r'$\mathcal{F}_{\mathrm{ice}}$')
 # ax[2].plot(xx_exp,flx_ice1_x*1e8,lw =5,color='skyblue', alpha = 0.8, label = r'$\mathcal{F}_{\mathrm{ice,small}}$')
@@ -1549,6 +1553,12 @@ if singlepop:
     ax[2].plot(xx_exp,flux_vap_face*1e8,  lw =lwD['va'],color=colD['va'], alpha = alpD['va'], label = r'$\mathcal{F}_{\mathrm{vap}}$')
     ax[2].plot(xx_exp,flux_water_face*1e8,lw =3,color='cyan', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{water}}$')
     ax[2].plot(xx_exp,flux_gas_face*1e8,lw =3,color='grey', alpha = 0.6, label = r'$\mathcal{F}_{\mathrm{xy}}$')
+    ax[2].plot(xx_exp, flux_vap_adv*1e8, lw =1,color='tab:red', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,adv}}$')
+    ax[2].plot(xx_exp, (flux_vap_face - flux_vap_adv)*1e8, lw =1,color='tab:blue', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,dfi}}$')
+    ax[2].plot(xx_exp, flux_gas_adv*1e8, lw =1,color='k', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,adv}}$')
+    ax[2].axvline(0.7, ls='dotted', c= 'black', lw=1)
+    ax[2].axvline(0.6, ls='dotted', c= 'black', lw=1)
+    ax[2].axvline(0.8, ls='dotted', c= 'black', lw=1)
 
 # ax[2].plot(xx_exp, -xx_exp/xx_exp,'k--')
 # ax[2].plot(xx_exp, -xx_exp/xx_exp*0.4,'k--')

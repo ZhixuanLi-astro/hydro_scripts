@@ -1,6 +1,6 @@
 #!/bin/bash
 
-names=("mmax" "fig_snow_2d")
+names=("fig_snow_2d" "2ddust")
 for name in ${names[@]}; do
 	echo "Creating animation for $name"
 	python animation.py $name &

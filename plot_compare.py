@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-plot_compare.py
-Compare 2D dust density maps: single_pop (002241) vs passive_test (002756).
-"""
-
 import sys
 from numpy import *
 import matplotlib.pyplot as plt
@@ -41,7 +36,7 @@ xx_exp_mesh, zz_exp_mesh = meshgrid(xx_exp,zz_exp)
 # ── helpers ──────────────────────────────────────────────────────────────────
 def face_f_2_power(x2min, x2max, cell_width_ratio, num_face):
     x = linspace(0, 1, num_face)
-    w = x**(1/3)
+    w = x**(1/2)
     return w * (x2max - x2min) + x2min
 def find_dust_scaleheight(rhos_intpl, y_xz_c):
     rho_p = rhos_intpl[1] 
@@ -377,18 +372,18 @@ def load_run(dir_path, nstep):
 #  Load all runs once — every figure below reuses these in-memory dicts
 # ══════════════════════════════════════════════════════════════════════════════
 BASE = '../../athena_works/'
-NSTEP = 694 
+NSTEP = 1954 
 
-data_530 = {}
+data = {}
 for run in ('DAS', 'DPS', 'DAR', 'DPR'):
     print(f'Loading {run} @ {NSTEP} ...')
-    data_530[run] = load_run(BASE + run + '/', NSTEP)
+    data[run] = load_run(BASE + run + '/', NSTEP)
 
 # short aliases used by the figures below
-d1 = data_530['DAS']   # single-pop active
-d2 = data_530['DPS']   # single-pop passive
-d3 = data_530['DAR']   # two-pop active
-d4 = data_530['DPR']   # two-pop passive
+d1 = data['DAS']   # single-pop active
+d2 = data['DPS']   # single-pop passive
+d3 = data['DAR']   # two-pop active
+d4 = data['DPR']   # two-pop passive
 
 # ── Col_vap bar comparison figure — all 3 bars in ONE panel ─────────────────
 fig_bar, ax_bar = plt.subplots(figsize=(14, 7))
@@ -827,13 +822,13 @@ M_NS = 5.4e19  # g
 M_Me = 3.86e21 # g mass of Mediterranean Sea
 print(f"\n=== Vapor masses (North Sea water mass = {M_NS:.1e} g) ===")
 print(f"single_lowa  (t={d1['simu_time']:.0f} yr):")
-print(f"  cold (T<150K):  {mc1/M_NS:.3f} NS  ")
-print(f"  warm (150-400K): {mw1/M_NS:.3f} NS ")
-print(f"  hot  (T>400K):  {mh1/M_NS:.3f} NS  ")
+print(f"  cold (T<150K):  {mc1/M_Me:.3f} NS  ")
+print(f"  warm (150-400K): {mw1/M_Me:.3f} NS ")
+print(f"  hot  (T>400K):  {mh1/M_Me:.3f} NS  ")
 print(f"low_alpha    (t={d2['simu_time']:.0f} yr):")
-print(f"  cold (T<150K):  {mc2/M_NS:.3f} NS  ")
-print(f"  warm (150-400K): {mw2/M_NS:.3f} NS ")
-print(f"  hot  (T>400K):  {mh2/M_NS:.3f} NS  ")
+print(f"  cold (T<150K):  {mc2/M_Me:.3f} NS  ")
+print(f"  warm (150-400K): {mw2/M_Me:.3f} NS ")
+print(f"  hot  (T>400K):  {mh2/M_Me:.3f} NS  ")
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  compare_2ddust:  DPS / DPR / DAS / DAR   (4 rows x 2 columns)
@@ -1021,8 +1016,8 @@ gsC = gridspec.GridSpec(4, 2, figure=figC, hspace=0.30, wspace=0.10,
                         height_ratios=[1, 2, 1, 2])
 axC = [[figC.add_subplot(gsC[i, j]) for j in range(2)] for i in range(4)]
 
-# data_530 was loaded once above — reuse it (no second read of the run files)
-run_data = [(name, tag, data_530[name]) for (name, tag) in runs_2ddust]
+# data was loaded once above — reuse it (no second read of the run files)
+run_data = [(name, tag, data[name]) for (name, tag) in runs_2ddust]
 
 c_ice_reps, c_vap_reps, c_comp_reps = [], [], []
 for row, (name, tag, dd) in enumerate(run_data):
@@ -1129,7 +1124,11 @@ def _midplane_ratios(d):
 
 
 figS, axS = plt.subplots(2, 4, figsize=(18, 9), sharex=True,
-                         gridspec_kw={'hspace': 0.10, 'wspace': 0.20})
+                         gridspec_kw={'hspace': 0.0, 'wspace': 0.0})
+#set the time to be the legend, without background box 
+legend = f'Time = {run_data[0][2]["simu_time"]:.1f} yr'
+legend_handles = [plt.Line2D([0], [0], color='none', label=f'Time = {run_data[0][2]["simu_time"]:.1f} yr')]
+axS[0][-1].legend(handles=legend_handles , fontsize=12, loc='upper right', framealpha=0.0)
 
 for k, (name, tag, dd) in enumerate(run_data):
     rr = dd['rad']                                   # AU, native grid
@@ -1141,17 +1140,16 @@ for k, (name, tag, dd) in enumerate(run_data):
     axS[0][k].plot(rr, sig_sil, c='tab:orange', lw=2.5, label=r'$\Sigma_{\rm sil}$')
     axS[0][k].plot(rr, sig_vap, c='tab:purple', lw=2.5, label=r'$\Sigma_{\rm vap}$')
     axS[0][k].set_yscale('log')
-    axS[0][k].set_ylim(1e-5, 1e4)      # shared across the 4 columns
+    axS[0][k].set_ylim(1e-3, 1e4)      # shared across the 4 columns
     axS[0][k].set_xlim(0.5, 3.0)
-    axS[0][k].set_title(f'{name}   ($t={dd["simu_time"]:.0f}$ yr)',
-                        fontsize=12)
+    axS[0][k].set_title(f'{tag}',fontsize=12)
 
     # ---- lower: midplane ratios ----
     d2g, v2g = _midplane_ratios(dd)
     axS[1][k].plot(rr, d2g, c='k',   lw=3.0, label=r'$(s/g)_{\rm mid}$')
     axS[1][k].plot(rr, v2g, c='red', lw=3.0, label=r'$(v/g)_{\rm mid}$')
     axS[1][k].set_yscale('log')
-    axS[1][k].set_ylim(1e-6, 0.2)      # shared across the 4 columns
+    axS[1][k].set_ylim(1e-4, 0.2)      # shared across the 4 columns
     axS[1][k].set_xlim(0.5, 3.0)
     axS[1][k].set_xlabel(r'$R$ [AU]', fontsize=12)
 
@@ -1165,6 +1163,10 @@ for k, (name, tag, dd) in enumerate(run_data):
                            fontsize=14, va='top')
         axS[1][k].annotate('(b)', xy=(0.02, 0.95), xycoords='axes fraction',
                            fontsize=14, va='top')
+    else:
+        # hide y-axis labels for the other columns
+        axS[0][k].set_yticklabels([])
+        axS[1][k].set_yticklabels([])
 
 figS.savefig('./plots/fig_snow_compare.png', dpi=300, bbox_inches='tight')
 print('Saved: ./plots/fig_snow_compare.png')
