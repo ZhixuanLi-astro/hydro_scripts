@@ -150,7 +150,7 @@ def face_f_2_cos(x2min,x2max,cell_width_ratio,num_face):
 
 def face_f_2_power(x2min,x2max,cell_width_ratio,num_face):
     x = linspace(0,1,num_face)
-    w = (x)**(1/2)
+    w = (x)**(1/3)
     tmp = w*(x2max-x2min) + x2min
     
     return tmp
@@ -424,6 +424,17 @@ flx_vap_dif_x1 *= dS_R* UNIT_Fm       # [code-side split] diffusive part
 flx_vap_dif_x2 *= dS_theta* UNIT_Fm
 flx_x1 *= dS_R* UNIT_Fm
 flx_x2 *= dS_theta* UNIT_Fm
+
+
+# nnext = int(nstep) +1
+# data_uov11= athena_read.athdf(DIR+'iceline.out2.'+str(nnext).rjust(5,'0')+'.athdf',face_func_2=face_f_2_power, num_ghost=0)
+# flx_vap_x111 = data_uov11['flx_vap_x1']*dS_R *UNIT_Fm
+# Mvap = 2.0*sum(flx_vap_x1[0,:,:],axis= 0)
+# Mvap11 = 2.0*sum(flx_vap_x111[0,:,:],axis= 0)
+# import pdb; pdb.set_trace()
+
+# dif_vap = data_uov['dif']
+# dif_vap_intpl= scaler_Intpl_Sph2car(rad,theta,phi,xx_exp,array([0.0]),zz_exp,dif_vap.T )[:,0,:]
 
 flx_ice1_x1 *= dS_R* UNIT_Fm 
 flx_ice1_x2 *= dS_theta* UNIT_Fm 
@@ -979,6 +990,7 @@ ax.annotate(r'$\tau_{ir}=1$', xy=(2.5, 0.25), xytext=(2.5, 0.1), fontsize = 20, 
 # ax.scatter(x_xz_c[34, 36], y_xz_c[34, 36], color = 'red', s = 50, marker = 'o', label = r'$(R,z)=(2.75,0.18)$ AU', zorder = 10)
 
 fig.savefig('./plots/vap_obs_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500)
+plt.close()
 
 fig, axs = plt.subplots(2, 1, figsize=(6, 6))
 m_p1_safe = where(m_p1[0].T > 0.0, m_p1[0].T, nan)
@@ -1489,6 +1501,7 @@ if singlepop:
     
 
     fig.savefig('./plots/2ddust_{:05d}.png'.format(int(filenum)), dpi = 300, bbox_inches='tight')
+    plt.close()
 
 
     fig = plt.figure(figsize = (7,15),facecolor='white')
@@ -1497,7 +1510,7 @@ if singlepop:
     fig.subplots_adjust(hspace = 0.06)
 
     ax[0].set_ylim(0, 30)
-# ax[0].plot(xx_exp,(sigma_gas-sigma_vap)*0.4, color = 'k', alpha = 1.0, label = '$ f_{\mathrm{i/g}} \Sigma_{\mathrm{xy}}$')
+    ax[0].plot(xx_exp,(sigma_gas-sigma_vap)*0.01, color = 'k', alpha = 1.0, label = r'$f_{\mathrm{i/g}} \Sigma_{\mathrm{xy}}$')
 # here the 0.4 is from the 0.8/2, in which 0.8 is the dust-to-gas flux ratio, so the vapor should be the half of it
     ax[0].plot(xx_exp, sigma_ice0, c = colD['si'], lw = lwD['si'], label = 'ice 0')
     ax[0].plot(xx_exp, sigma_sil0, c = colD['ss'], lw = lwD['ss'], label = 'silicate 0')
@@ -1567,10 +1580,12 @@ if singlepop:
     # [code-side split] exact decomposition of the vapor flux
     ax[2].plot(xx_exp, flux_vap_adv_face*1e8, lw =1,color='tab:red', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,adv}}$ (code)')
     ax[2].plot(xx_exp, flux_vap_dif_face*1e8, lw =1,color='tab:blue', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,dif}}$ (code)')
+    # ax[2].plot(xx_exp, (flux_vap_dif_face+min(flux_vap_adv_face))*1e8, lw =1,color='tab:green', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,adv}}+\mathcal{F}_{\mathrm{vap,dif}}$ (code)')
     # plot-side estimate (rho_v*v_r), kept for reference:
     # ax[2].plot(xx_exp, flux_vap_adv*1e8, lw =1,color='tab:red', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,adv}}$')
     # ax[2].plot(xx_exp, (flux_vap_face - flux_vap_adv)*1e8, lw =1,color='tab:blue', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,dfi}}$')
     ax[2].plot(xx_exp, flux_gas_adv*1e8, lw =1,color='k', alpha = 0.9, label = r'$\mathcal{F}_{\mathrm{vap,adv}}$')
+    # ax[2].axhline(-0.012, c= 'k', ls='--', lw = 1)
     ax[2].axvline(0.7, ls='dotted', c= 'black', lw=1)
     ax[2].axvline(0.6, ls='dotted', c= 'black', lw=1)
     ax[2].axvline(0.8, ls='dotted', c= 'black', lw=1)
@@ -1581,7 +1596,7 @@ if singlepop:
 # ax[2].axhline(-0.4, c= 'k', ls='--')
 
     ax[2].set_xlim(rin/L_norm,rout/L_norm)
-    ax[2].set_ylim(-3,5.0)
+    ax[2].set_ylim(-3.,5)
     ax[2].annotate(r'$\dot{M}_{\mathrm{acc}}$',xy=(1.0,-0.9),fontsize = 15)
     ax[2].annotate(r'$f_{\mathrm{i/g}} \dot{M}_{\mathrm{acc}}$',xy=(1.0,-0.25),fontsize = 15)
     ax[2].set_ylabel(r'Radial Mass Flux [$10^{-8}M_{\odot}$/yr]',fontsize = 15)
@@ -1604,6 +1619,20 @@ if singlepop:
 
     plt.savefig('./plots/fig_snow_2d_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500) 
     plt.close()
+    #
+    # plt.figure()
+    # plt.ylim(-1e-3, 1e-3)
+    # fv = dust_3_rho/rho 
+    # rnu = dust_3_rho*dif 
+    # plt.plot(rad, rnu[:,-1][0], color = 'k', lw = 2, label = r'$\rho_{\mathrm{vap}} D_{\mathrm{vap}}$')
+    # plt.plot(rad, flx_vap_dif_x1[:,-1][0]*1e8, color = 'tab:red', lw = 2, label = r'$F_{\mathrm{vap,dif}}$')
+    # ggg = gradient(fv[:,-1][0], rad)
+    # plt.plot(rad, ggg*(rnu[:,-1][0])*1e2, color = 'tab:blue', lw = 2, label = r'$\rho_{\mathrm{vap}} D_{\mathrm{vap}}\partial_{r} \rho_{\mathrm{vap}}/\rho_{\mathrm{gas}}$')
+    # plt.legend()
+    # plt.xlabel(r'$r$ [AU]', fontsize = 13)
+    # plt.savefig('./plots/test_{:05d}.png'.format(int(filenum)), bbox_inches='tight', dpi = 500)
+    # plt.close()
+
 
     import pdb; pdb.set_trace()
 fig,axes = plt.subplots(nrows = 2, ncols = 1,figsize = (11,9))
