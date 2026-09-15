@@ -783,35 +783,53 @@ def plot_vap_obs(ax, d, show_legend=True):
 
 # ── build vap_obs comparison figure ──────────────────────────────────────────
 import matplotlib.gridspec as gridspec
-fig2 = plt.figure(figsize=(18, 6))
-gs = gridspec.GridSpec(1, 2, figure=fig2, width_ratios=[1, 1.15], wspace=0.08)
-ax3 = fig2.add_subplot(gs[0])
-ax4 = fig2.add_subplot(gs[1], sharey=ax3)
-plt.setp(ax4.get_yticklabels(), visible=False)
+runs_vap_obs = [('DPS', data['DPS']), ('DPR', data['DPR']),
+                ('DAS', data['DAS']), ('DAR', data['DAR'])]
 
-crhov1,crho1_1, C_Tem1, mc1, mw1, mh1 = plot_vap_obs(ax3, d3, show_legend=True)
+fig2 = plt.figure(figsize=(16, 11))
+gs = gridspec.GridSpec(2, 2, figure=fig2, wspace=0.06, hspace=0.12)
+axv = [[None, None], [None, None]]
+axv[0][0] = fig2.add_subplot(gs[0, 0])
+axv[0][1] = fig2.add_subplot(gs[0, 1], sharey=axv[0][0])
+axv[1][0] = fig2.add_subplot(gs[1, 0])
+axv[1][1] = fig2.add_subplot(gs[1, 1], sharey=axv[1][0])
+plt.setp(axv[0][1].get_yticklabels(), visible=False)
+plt.setp(axv[1][1].get_yticklabels(), visible=False)
 
-ax4.set_xlabel(r'$R$ [AU]', fontsize=12)
-crhov2,crho1_2, C_Tem2, mc2, mw2, mh2 = plot_vap_obs(ax4, d4, show_legend=False)
-ax4.set_ylabel('')
+vap_mass = []
+vap_handles = None
+for k, (name, dd) in enumerate(runs_vap_obs):
+    i, j = divmod(k, 2)
+    ax = axv[i][j]
+    crhov, crho1, C_Tem, mc, mw, mh = plot_vap_obs(ax, dd, show_legend=(k == 0))
+    vap_mass.append((name, dd, mc, mw, mh))
+    ax.set_title(f'{name}   ($t={dd["simu_time"]:.0f}$ yr)', fontsize=13)
+    if j == 1:
+        ax.set_ylabel('')
+    if i == 1:
+        ax.set_xlabel(r'$R$ [AU]', fontsize=12)
+    if k == 0:
+        vap_handles = (crhov, crho1, C_Tem)
 
-# ── three colorbars on the right (pad values from original plot.py) ──────────
-cbarv = fig2.colorbar(crhov2, ax=ax4, orientation='vertical',
-                       pad=-0.15, shrink=0.3, aspect=12, anchor=(0, 1))
-cbarv.ax.set_ylabel(r'$\rho_{vap}$ [g cm$^{-3}$]', fontsize=12)
+# ── shared colour bars on the right of the 2x2 grid (same levels everywhere) ─
+crhov_ref, crho1_ref, C_Tem_ref = vap_handles
+
+caxV = fig2.add_axes([0.905, 0.685, 0.013, 0.19])
+cbarv = fig2.colorbar(crhov_ref, cax=caxV, orientation='vertical')
+cbarv.ax.set_ylabel(r'$\rho_{vap}$ [g cm$^{-3}$]', fontsize=11)
 cbarv.set_ticks(logspace(-20, -10, 6))
 cbarv.set_ticklabels([r'$10^{-20}$', r'$10^{-18}$', r'$10^{-16}$',
-                       r'$10^{-14}$', r'$10^{-12}$', r'$10^{-10}$'], fontsize=10)
+                      r'$10^{-14}$', r'$10^{-12}$', r'$10^{-10}$'], fontsize=9)
 
-cbar1 = fig2.colorbar(crho1_2, ax=ax4, orientation='vertical',
-                       pad=-0.15, shrink=0.3, aspect=12, anchor=(0, 0.5))
-cbar1.ax.set_ylabel(r'$\rho_{ice}/\rho_{gas}$', fontsize=12)
+cax1 = fig2.add_axes([0.905, 0.405, 0.013, 0.19])
+cbar1 = fig2.colorbar(crho1_ref, cax=cax1, orientation='vertical')
+cbar1.ax.set_ylabel(r'$\rho_{ice}/\rho_{gas}$', fontsize=11)
 cbar1.set_ticks([0.001, 0.01, 0.05])
-cbar1.set_ticklabels(['0.001', '0.01', '0.05'], fontsize=10)
+cbar1.set_ticklabels(['0.001', '0.01', '0.05'], fontsize=9)
 
-cbarT = fig2.colorbar(C_Tem2, ax=ax4, orientation='vertical',
-                       pad=0.02, shrink=0.3, aspect=12, anchor=(0, 0))
-cbarT.ax.set_ylabel(r'$T$ [K]', fontsize=12)
+caxT = fig2.add_axes([0.905, 0.125, 0.013, 0.19])
+cbarT = fig2.colorbar(C_Tem_ref, cax=caxT, orientation='vertical')
+cbarT.ax.set_ylabel(r'$T$ [K]', fontsize=11)
 
 fig2.savefig('./plots/compare_vap_obs.png', dpi=300, bbox_inches='tight')
 print('Saved: ./plots/compare_vap_obs.png')
@@ -821,14 +839,11 @@ print('Saved: ./plots/compare_vap_obs.png')
 M_NS = 5.4e19  # g
 M_Me = 3.86e21 # g mass of Mediterranean Sea
 print(f"\n=== Vapor masses (North Sea water mass = {M_NS:.1e} g) ===")
-print(f"single_lowa  (t={d1['simu_time']:.0f} yr):")
-print(f"  cold (T<150K):  {mc1/M_Me:.3f} NS  ")
-print(f"  warm (150-400K): {mw1/M_Me:.3f} NS ")
-print(f"  hot  (T>400K):  {mh1/M_Me:.3f} NS  ")
-print(f"low_alpha    (t={d2['simu_time']:.0f} yr):")
-print(f"  cold (T<150K):  {mc2/M_Me:.3f} NS  ")
-print(f"  warm (150-400K): {mw2/M_Me:.3f} NS ")
-print(f"  hot  (T>400K):  {mh2/M_Me:.3f} NS  ")
+for name, dd, mc, mw, mh in vap_mass:
+    print(f"{name}  (t={dd['simu_time']:.0f} yr):")
+    print(f"  cold (T<150K):   {mc/M_NS:.3f} NS")
+    print(f"  warm (150-400K): {mw/M_NS:.3f} NS")
+    print(f"  hot  (T>400K):   {mh/M_NS:.3f} NS")
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  compare_2ddust:  DPS / DPR / DAS / DAR   (4 rows x 2 columns)
