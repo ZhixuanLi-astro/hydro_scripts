@@ -372,7 +372,7 @@ def load_run(dir_path, nstep):
 #  Load all runs once — every figure below reuses these in-memory dicts
 # ══════════════════════════════════════════════════════════════════════════════
 BASE = '../../athena_works/'
-NSTEP = 1954 
+NSTEP = 2656 
 
 data = {}
 for run in ('DAS', 'DPS', 'DAR', 'DPR'):

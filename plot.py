@@ -150,7 +150,7 @@ def face_f_2_cos(x2min,x2max,cell_width_ratio,num_face):
 
 def face_f_2_power(x2min,x2max,cell_width_ratio,num_face):
     x = linspace(0,1,num_face)
-    w = (x)**(1/3)
+    w = (x)**(1/2)
     tmp = w*(x2max-x2min) + x2min
     
     return tmp
@@ -1062,13 +1062,13 @@ flux_gas_face = sum((flux_gas_x_intpl - flux_vap_x_intpl)*dz,axis = 0) *2.0 *(2*
 
 # [gas diffusive flux] theta-summed profiles (dS_R already carries sin(theta), so a
 # plain theta-sum with x2 for the wings is the flux through a spherical shell)
-flux_gas_shell     = 2.0*np.sum(flx_x1[0,:,:],         axis=0)   # total hydro mass flux
-flux_vflx_d_shell  = 2.0*np.sum(vflx_gas_x1_d[0,:,:],  axis=0)   # viscous mass row (~0 expected)
+flux_gas_shell     = 2.0*sum(flx_x1[0,:,:],         axis=0)   # total hydro mass flux
+flux_vflx_d_shell  = 2.0*sum(vflx_gas_x1_d[0,:,:],  axis=0)   # viscous mass row (~0 expected)
 flux_gas_adv_shell = flux_gas_shell - flux_vflx_d_shell          # advective-only mass flux
-flux_vflx_m1_shell = 2.0*np.sum(vflx_gas_x1_m1[0,:,:], axis=0)   # radial momentum
-flux_vflx_m3_shell = 2.0*np.sum(vflx_gas_x1_m3[0,:,:], axis=0)   # azimuthal momentum (r-phi stress)
-flux_vflx_e_shell  = 2.0*np.sum(vflx_gas_x1_e[0,:,:],  axis=0)   # viscous energy
-flux_cflx_e_shell  = 2.0*np.sum(cflx_gas_x1_e[0,:,:],  axis=0)   # conduction
+flux_vflx_m1_shell = 2.0*sum(vflx_gas_x1_m1[0,:,:], axis=0)   # radial momentum
+flux_vflx_m3_shell = 2.0*sum(vflx_gas_x1_m3[0,:,:], axis=0)   # azimuthal momentum (r-phi stress)
+flux_vflx_e_shell  = 2.0*sum(vflx_gas_x1_e[0,:,:],  axis=0)   # viscous energy
+flux_cflx_e_shell  = 2.0*sum(cflx_gas_x1_e[0,:,:],  axis=0)   # conduction
 flux_ice_face = sum(flux_ice_x_intpl*dz,axis = 0) *2.0 *(2*pi*xx_exp*L_norm)
 flux_vap_face = sum(flux_vap_x_intpl*dz,axis = 0) *2.0 *(2*pi*xx_exp*L_norm)
 flux_vap_dif_face = sum(flux_vap_dif_x_intpl*dz,axis = 0) *2.0 *(2*pi*xx_exp*L_norm)   # [code-side split]
@@ -1431,6 +1431,49 @@ rate_ratio = P_eq/P_vap * (dust_3_rho_xz/dust_1_rho_xz)
 # plt.legend(frameon=True, fontsize=12)
 # plt.savefig('./plots/col_vap_temp_{:05d}.png'.format(int(filenum)), dpi=100, bbox_inches='tight')
 # plt.close()
+# ------------------------------------------------------------------------------------------
+# [gas diffusive flux] decomposition of the radial gas flux:
+#   flx_x1 (total) = advective + viscous(visflx) + conduction(cndflx)
+if has_gas_diff_flx:
+    fig, [axg, axd] = plt.subplots(2, 1, figsize=(7, 6.5), sharex=True)
+
+    axg.axhline(0.0, c='k', ls='--', lw=1)
+    axg.plot(rad, flux_gas_shell*1e8, lw=2.5, color='grey',
+             label=r'$\mathcal{F}_{\rm gas,total}$')
+    axg.plot(rad, flux_gas_adv_shell*1e8, lw=1.2, color='tab:red',
+             label=r'$\mathcal{F}_{\rm gas,adv}$ = total - viscous mass row')
+    axg.plot(rad, flux_vflx_d_shell*1e8, lw=1.2, color='tab:blue', ls='--',
+             label=r'viscous mass row ($\approx 0$ expected)')
+    axg.set_yscale('symlog', linthresh=1e-5)
+    axg.set_ylabel(r'Gas mass flux [$10^{-8}M_\odot$/yr]', fontsize=12)
+    axg.legend(loc='best', fontsize=9)
+    axg.set_title('gas diffusive flux check', fontsize=12)
+
+    axd.axhline(0.0, c='k', ls='--', lw=1)
+    axd.plot(rad, flux_vflx_m3_shell, lw=2.0, color='tab:purple',
+             label=r'$\sigma_{r\phi}$ (azimuthal momentum)')
+    axd.plot(rad, flux_vflx_m1_shell, lw=1.5, color='tab:orange',
+             label='radial momentum')
+    axd.plot(rad, flux_vflx_e_shell, lw=1.2, color='tab:green',
+             label='viscous energy')
+    axd.plot(rad, flux_cflx_e_shell, lw=1.2, color='tab:brown',
+             label='conduction (energy)')
+    _vals = concatenate([flux_vflx_m3_shell, flux_vflx_m1_shell, flux_vflx_e_shell, flux_cflx_e_shell])
+    _mx = nanmax(abs(_vals)) if isfinite(_vals).any() else 1.0
+    axd.set_yscale('symlog', linthresh=1e-4)
+    axd.set_ylabel('Diffusive flux [code units]', fontsize=12)
+    axd.set_xlabel(r'$r$ [au]', fontsize=12)
+    axd.legend(loc='best', fontsize=9)
+    axg.set_xlim(rin/L_norm, rout/L_norm)
+
+    plt.tight_layout()
+    plt.savefig('./plots/gas_diffusive_flux_{:05d}.png'.format(int(filenum)), dpi=300)
+    plt.close()
+
+    _tot = nanmax(abs(flx_x1[0,:,:]))
+    _vis = nanmax(abs(vflx_gas_x1_d[0,:,:]))
+else:
+    print('[plot.py] no vflx_gas_x1_* in this output: rebuild the code (make) and re-run to get the gas diffusive fluxes')
 
 
 if singlepop: 
@@ -1587,7 +1630,7 @@ if singlepop:
     flux_vap_adv *= UNIT_Fm
     flux_gas_adv = sum(rho_intpl*dz*vx_intpl,axis = 0)*2.0 *(2*pi*xx_exp*L_norm)
     flux_gas_adv *= UNIT_Fm
-    ax[2].set_yscale('symlog', linthresh = 1e-5)
+    # ax[2].set_yscale('symlog', linthresh = 1e-5)
     ax[2].plot(xx_exp,flux_ice_face*1e8, lw =lwD['si'],color='darkblue', alpha = alpD['si'], label = r'$\mathcal{F}_{\mathrm{ice}}$')
 # ax[2].plot(xx_exp,(flux_ice_face + flux_ice1_face)*1e8,lw =lwD['li'],color='blue', alpha = 1, label = r'$\mathcal{F}_{\mathrm{ice}}$')
 # ax[2].plot(xx_exp,flx_ice1_x*1e8,lw =5,color='skyblue', alpha = 0.8, label = r'$\mathcal{F}_{\mathrm{ice,small}}$')
@@ -1620,7 +1663,7 @@ if singlepop:
 # ax[2].axhline(-0.4, c= 'k', ls='--')
 
     ax[2].set_xlim(rin/L_norm,rout/L_norm)
-    ax[2].set_ylim(-3.,5)
+    ax[2].set_ylim(-0.05,0.05)
     ax[2].annotate(r'$\dot{M}_{\mathrm{acc}}$',xy=(1.0,-0.9),fontsize = 15)
     ax[2].annotate(r'$f_{\mathrm{i/g}} \dot{M}_{\mathrm{acc}}$',xy=(1.0,-0.25),fontsize = 15)
     ax[2].set_ylabel(r'Radial Mass Flux [$10^{-8}M_{\odot}$/yr]',fontsize = 15)
@@ -2830,47 +2873,3 @@ if False:
     plt.tight_layout()
     plt.close()
 
-# ------------------------------------------------------------------------------------------
-# [gas diffusive flux] decomposition of the radial gas flux:
-#   flx_x1 (total) = advective + viscous(visflx) + conduction(cndflx)
-if has_gas_diff_flx:
-    fig, [axg, axd] = plt.subplots(2, 1, figsize=(7, 6.5), sharex=True)
-
-    axg.axhline(0.0, c='k', ls='--', lw=1)
-    axg.plot(rad, flux_gas_shell*1e8, lw=2.5, color='grey',
-             label=r'$\mathcal{F}_{\rm gas,total}$')
-    axg.plot(rad, flux_gas_adv_shell*1e8, lw=1.2, color='tab:red',
-             label=r'$\mathcal{F}_{\rm gas,adv}$ = total - viscous mass row')
-    axg.plot(rad, flux_vflx_d_shell*1e8, lw=1.2, color='tab:blue', ls='--',
-             label=r'viscous mass row ($\approx 0$ expected)')
-    axg.set_yscale('symlog', linthresh=1e-5)
-    axg.set_ylabel(r'Gas mass flux [$10^{-8}M_\odot$/yr]', fontsize=12)
-    axg.legend(loc='best', fontsize=9)
-    axg.set_title('gas diffusive flux check', fontsize=12)
-
-    axd.axhline(0.0, c='k', ls='--', lw=1)
-    axd.plot(rad, flux_vflx_m3_shell, lw=2.0, color='tab:purple',
-             label=r'$\sigma_{r\phi}$ (azimuthal momentum)')
-    axd.plot(rad, flux_vflx_m1_shell, lw=1.5, color='tab:orange',
-             label='radial momentum')
-    axd.plot(rad, flux_vflx_e_shell, lw=1.2, color='tab:green',
-             label='viscous energy')
-    axd.plot(rad, flux_cflx_e_shell, lw=1.2, color='tab:brown',
-             label='conduction (energy)')
-    _vals = concatenate([flux_vflx_m3_shell, flux_vflx_m1_shell, flux_vflx_e_shell, flux_cflx_e_shell])
-    _mx = nanmax(abs(_vals)) if isfinite(_vals).any() else 1.0
-    axd.set_yscale('symlog', linthresh=max(_mx*1e-4, 1e-300))
-    axd.set_ylabel('Diffusive flux [code units]', fontsize=12)
-    axd.set_xlabel(r'$r$ [au]', fontsize=12)
-    axd.legend(loc='best', fontsize=9)
-    axg.set_xlim(rin/L_norm, rout/L_norm)
-
-    plt.tight_layout()
-    plt.savefig('./plots/gas_diffusive_flux_{:05d}.png'.format(int(filenum)), dpi=300)
-    plt.close()
-
-    _tot = nanmax(abs(flx_x1[0,:,:]))
-    _vis = nanmax(abs(vflx_gas_x1_d[0,:,:]))
-    print('[plot.py] gas diffusive flux figure written; max|viscous mass row|/max|gas flux| = {:.3e}'.format(_vis/max(_tot, 1e-300)))
-else:
-    print('[plot.py] no vflx_gas_x1_* in this output: rebuild the code (make) and re-run to get the gas diffusive fluxes')
