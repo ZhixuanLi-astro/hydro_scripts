@@ -722,9 +722,9 @@ def plot_vap_obs(ax, d, show_legend=True):
                 m_hot_M[i, j] = d['vap_rho_xz'][i, j] * rad[i]**2 * sin(theta[j]) \
                     * diff(rad_f)[i] * diff(theta_f)[j] * 2*pi * UNIT_M
 
-    threshold_cold = _mass_threshold(m_cold_M, vap_rho, rad, theta, thres=0.99)
-    threshold_warm = _mass_threshold(m_warm_M, vap_rho, rad, theta, thres=0.9)
-    threshold_hot  = _mass_threshold(m_hot_M,  vap_rho, rad, theta, thres=0.9)
+    threshold_cold = _mass_threshold(m_cold_M, vap_rho, rad, theta, thres=0.95)
+    threshold_warm = _mass_threshold(m_warm_M, vap_rho, rad, theta, thres=0.95)
+    threshold_hot  = _mass_threshold(m_hot_M,  vap_rho, rad, theta, thres=0.95)
 
     m_cold_tot = sum(m_cold_M)
     m_warm_tot = sum(m_warm_M)
@@ -774,7 +774,7 @@ def plot_vap_obs(ax, d, show_legend=True):
         ax.legend(handles=legend_elements, loc='upper left', fontsize=10, framealpha=0.8)
 
     # τ_ir annotation
-    ax.annotate(r'$\tau_{ir}=1$', xy=(2.5, 0.25), xytext=(2.5, 0.13),
+    ax.annotate(r'$\tau_{ir}=1$', xy=(2.5, 0.25), xytext=(2.5, 0.16),
                 fontsize=20, color='purple', zorder=10,
                 fontweight='bold', rotation=20)
 
@@ -803,7 +803,10 @@ for k, (name, dd) in enumerate(runs_vap_obs):
     ax = axv[i][j]
     crhov, crho1, C_Tem, mc, mw, mh = plot_vap_obs(ax, dd, show_legend=(k == 0))
     vap_mass.append((name, dd, mc, mw, mh))
-    ax.set_title(f'{name}   ($t={dd["simu_time"]:.0f}$ yr)', fontsize=13)
+    if k ==0:
+        ax.set_title(f'{name}   ($t={dd["simu_time"]:.0f}$ yr)', fontsize=13)
+    else:
+        ax.set_title(f'{name}',  fontsize=13)
     if j == 1:
         ax.set_ylabel('')
     if i == 1:
@@ -814,20 +817,20 @@ for k, (name, dd) in enumerate(runs_vap_obs):
 # ── shared colour bars on the right of the 2x2 grid (same levels everywhere) ─
 crhov_ref, crho1_ref, C_Tem_ref = vap_handles
 
-caxV = fig2.add_axes([0.905, 0.685, 0.013, 0.19])
+caxV = fig2.add_axes([0.915, 0.685, 0.013, 0.25])
 cbarv = fig2.colorbar(crhov_ref, cax=caxV, orientation='vertical')
 cbarv.ax.set_ylabel(r'$\rho_{vap}$ [g cm$^{-3}$]', fontsize=11)
 cbarv.set_ticks(logspace(-20, -10, 6))
 cbarv.set_ticklabels([r'$10^{-20}$', r'$10^{-18}$', r'$10^{-16}$',
                       r'$10^{-14}$', r'$10^{-12}$', r'$10^{-10}$'], fontsize=9)
 
-cax1 = fig2.add_axes([0.905, 0.405, 0.013, 0.19])
+cax1 = fig2.add_axes([0.915, 0.405, 0.013, 0.25])
 cbar1 = fig2.colorbar(crho1_ref, cax=cax1, orientation='vertical')
 cbar1.ax.set_ylabel(r'$\rho_{ice}/\rho_{gas}$', fontsize=11)
 cbar1.set_ticks([0.001, 0.01, 0.05])
 cbar1.set_ticklabels(['0.001', '0.01', '0.05'], fontsize=9)
 
-caxT = fig2.add_axes([0.905, 0.125, 0.013, 0.19])
+caxT = fig2.add_axes([0.915, 0.125, 0.013, 0.25])
 cbarT = fig2.colorbar(C_Tem_ref, cax=caxT, orientation='vertical')
 cbarT.ax.set_ylabel(r'$T$ [K]', fontsize=11)
 
@@ -841,9 +844,9 @@ M_Me = 3.86e21 # g mass of Mediterranean Sea
 print(f"\n=== Vapor masses (North Sea water mass = {M_NS:.1e} g) ===")
 for name, dd, mc, mw, mh in vap_mass:
     print(f"{name}  (t={dd['simu_time']:.0f} yr):")
-    print(f"  cold (T<150K):   {mc/M_NS:.3f} NS")
-    print(f"  warm (150-400K): {mw/M_NS:.3f} NS")
-    print(f"  hot  (T>400K):   {mh/M_NS:.3f} NS")
+    print(f"  cold (T<150K):   {mc/M_Me:.3f} Me")
+    print(f"  warm (150-400K): {mw/M_Me:.3f} Me")
+    print(f"  hot  (T>400K):   {mh/M_Me:.3f} Me")
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  compare_2ddust:  DPS / DPR / DAS / DAR   (4 rows x 2 columns)
