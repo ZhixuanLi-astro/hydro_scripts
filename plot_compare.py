@@ -177,11 +177,26 @@ def load_run(dir_path, nstep):
         d['sil_rho_xz'][sid]  = dust_rho_xz.get(sid, zeros_like(rho_xz))
 
     # water (ice) mass fraction per population: f_H2O = rho_ice/(rho_ice+rho_sil)
+    # NB: dust-free cells sit exactly at the dust density floor (dffloor for
+    # every dust fluid), which makes the ratio meaningless — it comes out as
+    # 1e-15/(2e-15) = 0.5.  Mask those cells as NaN so they stay blank in the
+    # composition maps instead of painting a spurious 0.5 background.
+    try:
+        dffloor = ath['dust']['dffloor']
+    except (KeyError, TypeError):
+        dffloor = 0.0
+    d['dffloor'] = dffloor
+    floor_tol = dffloor * 1.01                 # tolerance for floor round-off
+
     d['watercomp'] = {}
     for p, iid in enumerate(ice_ids):
         sid = 2*p + 2
-        den = d['ice_rho_xz'][iid] + d['sil_rho_xz'].get(sid, zeros_like(rho_xz))
-        d['watercomp'][p] = where(den > 0.0, d['ice_rho_xz'][iid]/den, 0.0)
+        ice = d['ice_rho_xz'][iid]
+        sil = d['sil_rho_xz'].get(sid, zeros_like(rho_xz))
+        den = ice + sil
+        wc = where(den > 0.0, ice/where(den > 0.0, den, 1.0), 0.0)
+        at_floor = (ice <= floor_tol) or (sil <= floor_tol)
+        d['watercomp'][p] = where(at_floor, nan, wc)
 
     d['d2g_snow'] = d2g_snow
 
