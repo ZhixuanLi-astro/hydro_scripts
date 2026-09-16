@@ -151,29 +151,11 @@ def load_run(dir_path, nstep):
     tem_xz = tem[index_phi,:,:].T
     d['rho_xz'] = rho_xz; d['tem_xz'] = tem_xz
 
-    # ── masked densities ──
-    # A cell only carries information where the population really has solids.
-    # The water mass fraction is NOT fixed at 50 %, so the cut is made on the
-    # TOTAL solid-to-gas ratio of the population,
-    #     (rho_ice + rho_sil) / rho_gas < d2g_snow,
-    # applied to both the ice and the silicate map of that population.  The
-    # remaining fluids (vapor tracer, number-density tracers) keep a
-    # per-species cut on their own density.
+    # ── masked densities (filter tiny d2g) ──
     d2g_snow = 1.e-4
-    rho_safe = where(rho_xz > 0.0, rho_xz, 1.0)
     dust_rho_mod_xz = {did: deepcopy(arr) for did, arr in dust_rho_xz.items()}
-    for p, iid in enumerate(ice_ids):
-        sid = 2*p + 2
-        ice = dust_rho_xz.get(iid, zeros_like(rho_xz))
-        sil = dust_rho_xz.get(sid, zeros_like(rho_xz))
-        low_solid = ((ice + sil)/rho_safe) < d2g_snow
-        dust_rho_mod_xz[iid][low_solid] = nan
-        if sid in dust_rho_mod_xz:
-            dust_rho_mod_xz[sid][low_solid] = nan
     for did in dust_rho_mod_xz:
-        if did in ice_ids or did in sil_ids:
-            continue
-        dust_rho_mod_xz[did][dust_rho_xz[did]/rho_safe < d2g_snow * 0.5] = nan
+        dust_rho_mod_xz[did][dust_rho_xz[did]/rho_xz < d2g_snow * 0.5] = nan
 
     # Get correct arrays by semantic role
     if vapor_id is not None:
@@ -195,15 +177,25 @@ def load_run(dir_path, nstep):
         d['sil_rho_xz'][sid]  = dust_rho_xz.get(sid, zeros_like(rho_xz))
 
     # water (ice) mass fraction per population: f_H2O = rho_ice/(rho_ice+rho_sil)
-    # computed from the MASKED densities, so it is NaN wherever the population
-    # has no meaningful solid content (and never a floor-induced 0.5)
+    # NB: a dust fluid sitting at its density floor (dffloor) carries no real
+    # information, so a cell where the ice OR the silicate is at the floor has a
+    # meaningless ratio (dust-free cells give 1e-15/(2e-15) = 0.5) -> NaN
+    try:
+        dffloor = ath['dust']['dffloor']
+    except (KeyError, TypeError):
+        dffloor = 0.0
+    d['dffloor'] = dffloor
+    floor_tol = dffloor * 1.01                 # tolerance for floor round-off
+
     d['watercomp'] = {}
     for p, iid in enumerate(ice_ids):
         sid = 2*p + 2
-        ice_m = d['ice_rho_mod'][iid]
-        sil_m = d['sil_rho_mod'].get(sid, zeros_like(rho_xz))
-        den = ice_m + sil_m
-        d['watercomp'][p] = where(den > 0.0, ice_m/where(den > 0.0, den, 1.0), nan)
+        ice = d['ice_rho_xz'][iid]
+        sil = d['sil_rho_xz'].get(sid, zeros_like(rho_xz))
+        den = ice + sil
+        wc = where(den > 0.0, ice/where(den > 0.0, den, 1.0), 0.0)
+        at_floor = (ice <= 1.e-15) | (sil <=1.e-15)
+        d['watercomp'][p] = where(at_floor, nan, wc)
 
     d['d2g_snow'] = d2g_snow
 
