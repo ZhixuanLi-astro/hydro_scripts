@@ -66,6 +66,7 @@ def calc_ini(rhoint, v_frag, Tem, alpha, rad, Mstar):
     Hd1 = dust_scale_height(St1, Hg, alpha)
 
     print ("m0, m1, St0, St1, Hd0, Hd1: ", m0, m1, St0, St1, Hd0/Hg, Hd1/Hg)
+    import pdb; pdb.set_trace()
     return m0, m1, St0, St1, Hd0, Hd1
 
 
@@ -82,8 +83,8 @@ def dust_scale_height(St, Hg, alpha):
     Hd = Hg * (1 + St/alpha * (1+2*St)/(1+St))**(-0.5)
     return Hd
 
-def rhog_midplane(q, rho0, r0, rad):
-    rhog = rho0 * (rad/r0)**(-q)
+def rhog_midplane(p, rho0, r0, rad):
+    rhog = rho0 * (rad/r0)**(-p)
     return rhog
 
 def get_rhoint(fice, fsil, rhoint_ice, rhoint_sil):
@@ -145,7 +146,7 @@ def write_athinput_dust(inputfile, m0, m1, St0, St1, Hratio0, Hratio1):
 if __name__ == "__main__":
     alpha = athinputs['problem']['alpha_vis']
     Tem = get_tem(rout, T0, -q_value, 3.0)
-    v_frag = 1200
+    v_frag = 1000
 
     # combined internal density: 50% ice + 50% silicate
     rhoint = get_rhoint(0.50, 0.50,

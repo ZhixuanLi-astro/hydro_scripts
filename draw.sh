@@ -10,13 +10,13 @@
 NUM_PROCESSES=40
 
 # Define the range of values
-START=3090
-END=3163
+START=3000
+END=3800
 # Function to run the plotting script
 run_plot() {
 	for ((i = $1; i <= $2; i++)); do
 		echo "Processing item $i"
-		python plot.py $i DAS &
+		python plot.py $i DAR &
 		# Limit the number of background processes
 		if (($(jobs -r | wc -l) >= NUM_PROCESSES)); then
 			wait -n

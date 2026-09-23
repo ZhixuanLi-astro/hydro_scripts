@@ -381,17 +381,247 @@ def load_run(dir_path, nstep):
 
     return d
 
+def _midplane_ratios(d):
+    """Midplane (theta_max row) solid/gas and vapor/gas density ratios."""
+    jm = int(argmax(d['theta']))
+    rho_m = d['rho_xz'][:, jm]
+    solid_m = sum([d['ice_rho_xz'][iid][:, jm] for iid in d['ice_ids']], axis=0)
+    solid_m = solid_m + sum([d['sil_rho_xz'][sid][:, jm]
+                             for sid in d['sil_rho_xz']], axis=0)
+    denom = where(rho_m > 0.0, rho_m, 1.0)
+    d2g = where(rho_m > 0.0, solid_m / denom, 0.0)
+    v2g = where(rho_m > 0.0, d['vap_rho_xz'][:, jm] / denom, 0.0)
+    return d2g, v2g
+
+
+def _mass_threshold(mass_map, rho_map, rad, theta, thres=0.99):
+    cells = []
+    total_mass = 0.0
+    for i in range(len(rad)):
+        for j in range(len(theta)):
+            if mass_map[i, j] > 0 and rho_map[i, j] > 0:
+                cells.append((rho_map[i, j], mass_map[i, j]))
+                total_mass += mass_map[i, j]
+    if total_mass == 0:
+        return 0.0
+    cells.sort(key=lambda x: x[0], reverse=True)
+    cum = 0.0
+    target = thres * total_mass
+    for density, mass in cells:
+        cum += mass
+        if cum >= target:
+            return density
+    return cells[-1][0]
+
+
+def plot_vap_obs(ax, d, show_legend=True):
+    """Plot vap_obs on a single axis. Returns (crhov, crho1, C_Tem) for colorbars."""
+    from matplotlib.patches import Patch
+
+    ax.set_ylim(0, 0.25)
+    ax.set_xlim(d['rin']/d['L_norm'], 3)
+    ax.set_ylabel(r'$z$ [AU]', fontsize=12)
+
+    # background vapor density (Greys)
+    crhov = ax.contourf(d['x_xz_c'], d['y_xz_c'],
+                d['vap_rho_xz'] * d['UNIT_DEN'],
+                levels=logspace(-19, -9, 10), norm=LogNorm(),
+                cmap='Greys', alpha=1.0, extend='both',
+                zorder=3, antialiased=True)
+
+    # ice-to-gas ratio
+    if d['N_pop'] == 1:
+        ice_ratio = d['ice_rho_mod'][d['ice_ids'][0]] / d['rho_xz']
+    else:
+        ice_sum = sum(d['ice_rho_xz'][iid] for iid in d['ice_ids'])
+        ice_ratio = ice_sum / d['rho_xz']
+        ice_ratio[ice_ratio < 1.e-4] = nan
+
+    ice_colors = ['white', 'skyblue', 'deepskyblue', 'dodgerblue', 'blue', 'darkblue']
+    crho1 = ax.contourf(d['x_xz_c'], d['y_xz_c'], ice_ratio,
+                levels=logspace(log10(0.0005), log10(0.05), 7),
+                norm=LogNorm(), antialiased=True,
+                colors=ice_colors, alpha=0.7, extend='both', zorder=4)
+
+    # τ_ir = 1 contour
+    ax.contour(d['x_xz_c'], d['y_xz_c'], d['tau_ir'],
+               levels=array([1.0]), colors='purple',
+               linestyles='dashed', linewidths=3.0, zorder=5)
+
+    # ── vapor colored by temperature ──
+    vap_rho = d['vap_rho_xz'] * d['UNIT_DEN']
+    tem_xz = d['tem_xz']
+    tau_ir = d['tau_ir']
+    rad   = d['rad']
+    rad_f = d['rad_f']
+    theta = d['theta']
+    theta_f = d['theta_f']
+    UNIT_M = d['UNIT_M']
+
+    vap_cold = ma.masked_where(~((tem_xz < 150) & (vap_rho > 0)), vap_rho)
+    vap_warm = ma.masked_where(~((tem_xz >= 150) & (tem_xz < 400) & (vap_rho > 0)), vap_rho)
+    vap_hot  = ma.masked_where(~((tem_xz >= 400) & (vap_rho > 0)), vap_rho)
+
+    # mass integration
+    m_cold_M = zeros_like(d['vap_rho_xz'])
+    m_warm_M = zeros_like(d['vap_rho_xz'])
+    m_hot_M  = zeros_like(d['vap_rho_xz'])
+    for i in range(len(rad)):
+        for j in range(len(theta)):
+            if tem_xz[i, j] < 150 and tau_ir[i, j] < 1.0:
+                m_cold_M[i, j] = d['vap_rho_xz'][i, j] * rad[i]**2 * sin(theta[j]) \
+                    * diff(rad_f)[i] * diff(theta_f)[j] * 2*pi * UNIT_M
+            elif tem_xz[i, j] >= 150 and tem_xz[i, j] < 400 and tau_ir[i, j] < 1.0:
+                m_warm_M[i, j] = d['vap_rho_xz'][i, j] * rad[i]**2 * sin(theta[j]) \
+                    * diff(rad_f)[i] * diff(theta_f)[j] * 2*pi * UNIT_M
+            elif tem_xz[i, j] >= 400 and tau_ir[i, j] < 1.0:
+                m_hot_M[i, j] = d['vap_rho_xz'][i, j] * rad[i]**2 * sin(theta[j]) \
+                    * diff(rad_f)[i] * diff(theta_f)[j] * 2*pi * UNIT_M
+
+    threshold_cold = _mass_threshold(m_cold_M, vap_rho, rad, theta, thres=0.99)
+    threshold_warm = _mass_threshold(m_warm_M, vap_rho, rad, theta, thres=0.99)
+    threshold_hot  = _mass_threshold(m_hot_M,  vap_rho, rad, theta, thres=0.99)
+
+    m_cold_tot = sum(m_cold_M)
+    m_warm_tot = sum(m_warm_M)
+    m_hot_tot  = sum(m_hot_M)
+
+    vap_cold_90 = ma.masked_where(~((tau_ir < 1.0) & (vap_cold > 0) & (vap_rho >= threshold_cold)), vap_rho)
+    vap_warm_90 = ma.masked_where(~((tau_ir < 1.0) & (vap_warm > 0) & (vap_rho >= threshold_warm)), vap_rho)
+    vap_hot_90  = ma.masked_where(~((tau_ir < 1.0) & (vap_hot > 0) & (vap_rho >= threshold_hot)), vap_rho)
+
+    levels_vap = logspace(-20, -8, 10)
+    ax.contourf(d['x_xz_c'],  d['y_xz_c'], vap_cold_90, levels=levels_vap,
+                norm=LogNorm(), colors=['blue'],  alpha=0.5, zorder=6, antialiased=True)
+    ax.contourf(d['x_xz_c'],  d['y_xz_c'], vap_warm_90, levels=levels_vap,
+                norm=LogNorm(), colors=['orange'], alpha=0.5, zorder=6, antialiased=True)
+    ax.contourf(d['x_xz_c'],  d['y_xz_c'], vap_hot_90,  levels=levels_vap,
+                norm=LogNorm(), colors=['red'],   alpha=0.5, zorder=6, antialiased=True)
+    ax.contourf(d['x_xz_c'], -d['y_xz_c'], vap_cold_90, levels=levels_vap,
+                norm=LogNorm(), colors=['blue'],  alpha=0.5, zorder=6, antialiased=True)
+    ax.contourf(d['x_xz_c'], -d['y_xz_c'], vap_warm_90, levels=levels_vap,
+                norm=LogNorm(), colors=['orange'], alpha=0.5, zorder=6, antialiased=True)
+    ax.contourf(d['x_xz_c'], -d['y_xz_c'], vap_hot_90,  levels=levels_vap,
+                norm=LogNorm(), colors=['red'],   alpha=0.5, zorder=6, antialiased=True)
+
+    # temperature contours
+    C_Tem = ax.contour(d['x_xz_c'],  d['y_xz_c'], tem_xz,
+               levels=linspace(100, 400, 5, endpoint=True),
+               cmap='coolwarm', alpha=0.8, linewidths=1.5,
+               linestyles='dashed', zorder=11)
+    ax.contour(d['x_xz_c'], -d['y_xz_c'], tem_xz,
+               levels=linspace(100, 400, 5, endpoint=True),
+               cmap='coolwarm', alpha=0.8, linewidths=1.5,
+               linestyles='dashed', zorder=11)
+    ax.contour(d['x_xz_c'],  d['y_xz_c'], tem_xz,
+               levels=linspace(100, 400, 5, endpoint=True),
+               colors='white', alpha=0.8, linewidths=2.8, zorder=10)
+    ax.contour(d['x_xz_c'], -d['y_xz_c'], tem_xz,
+               levels=linspace(100, 400, 5, endpoint=True),
+               colors='white', alpha=0.8, linewidths=2.8, zorder=10)
+
+    # legend — only on the left panel
+    if show_legend:
+        legend_elements = [
+            Patch(facecolor='blue',  alpha=0.5, label=r'$T<150$ K'),
+            Patch(facecolor='orange', alpha=0.5, label=r'$150<T<400$ K'),
+            Patch(facecolor='red',   alpha=0.5, label=r'$T>400$ K'),
+        ]
+        ax.legend(handles=legend_elements, loc='upper left', fontsize=10, framealpha=0.8)
+
+    # τ_ir annotation
+    ax.annotate(r'$\tau_{ir}=1$', xy=(2.5, 0.25), xytext=(2.5, 0.16),
+                fontsize=20, color='purple', zorder=10,
+                fontweight='bold', rotation=20)
+
+    return crhov, crho1, C_Tem, m_cold_tot, m_warm_tot, m_hot_tot
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  Load all runs once — every figure below reuses these in-memory dicts
 # ══════════════════════════════════════════════════════════════════════════════
 BASE = '../../athena_works/'
-NSTEP = 2656 
+NSTEP = 3500 
 
 data = {}
-for run in ('DAS', 'DPS', 'DAR', 'DPR'):
+for run in ('DAS', 'DAR', 'DPS', 'DPR'):
     print(f'Loading {run} @ {NSTEP} ...')
     data[run] = load_run(BASE + run + '/', NSTEP)
+
+runs_snow_vert = [('DAS', data['DAS']), ('DAR', data['DAR'])]
+
+figSv, axSv = plt.subplots(1, 1, figsize=(7, 5), sharex=True,
+                           gridspec_kw={'hspace': 0.08, 'wspace': 0.22}, facecolor='none')
+
+lsD ={'DAS': '-', 'DAR': '--'}
+nameD = {'DAS': 'single', 'DAR': 'two pop'}
+for i, (name, dd) in enumerate(runs_snow_vert):
+    rr = dd['rad']                                   # AU, native grid
+
+    # ---- column (b): midplane density ratios ----
+    d2g, v2g = _midplane_ratios(dd)
+    axSv.plot(rr, d2g, c='k',   lw=2.0, ls=lsD[name], label='{}(s/g)'.format(nameD[name]))
+    axSv.plot(rr, v2g, c='red', lw=2.0, ls=lsD[name], label='{}(v/g)'.format(nameD[name]))
+    axSv.set_ylim(1e-4, 0.03)            # same range in both rows
+    axSv.set_xlim(0.5, 3.0)
+
+# axSv.legend(fontsize=9, loc='upper right', framealpha=0.9)
+
+axSv.set_ylabel('midplane density ratio', fontsize=12)
+axSv.set_ylabel('midplane density ratio', fontsize=12)
+axSv.set_xlabel(r'$R$ [AU]', fontsize=12)
+
+figSv.savefig('./plots/fig_snow_compare_DAS_DAR.png', dpi=300,
+              bbox_inches='tight',transparent=True)
+print('Saved: ./plots/fig_snow_compare_DAS_DAR.png')
+plt.close(figSv)
+
+import matplotlib.gridspec as gridspec
+runs_vap_obs = [
+                ('DAS', data['DAS']), ('DAR', data['DAR'])]
+
+fig2 = plt.figure(figsize=(16, 5.5), facecolor='none')
+gs = gridspec.GridSpec(1, 2, figure=fig2, wspace=0.06, hspace=0.12)
+axv = [None, None]
+axv[0] = fig2.add_subplot(gs[0])
+axv[1] = fig2.add_subplot(gs[1], sharey=axv[0])
+plt.setp(axv[1].get_yticklabels(), visible=False)
+
+vap_mass = []
+vap_handles = None
+for k, (name, dd) in enumerate(runs_vap_obs):
+    ax = axv[k]
+    crhov, crho1, C_Tem, mc, mw, mh = plot_vap_obs(ax, dd, show_legend=(k == 0))
+    vap_mass.append((name, dd, mc, mw, mh))
+
+    ax.set_title(f'{nameD[name]}',  fontsize=13)
+    if k == 1:
+        ax.set_ylabel('')
+    ax.set_xlabel(r'$R$ [AU]', fontsize=12)
+    if k == 0:
+        vap_handles = (crhov, crho1, C_Tem)
+
+# ── shared colour bars on the right of the 2x2 grid (same levels everywhere) ─
+crhov_ref, crho1_ref, C_Tem_ref = vap_handles
+
+caxV = fig2.add_axes([0.915, 0.685, 0.013, 0.25])
+cbarv = fig2.colorbar(crhov_ref, cax=caxV, orientation='vertical')
+cbarv.ax.set_ylabel(r'$\rho_{vap}$ [g cm$^{-3}$]', fontsize=11)
+cbarv.set_ticks(logspace(-20, -10, 6))
+cbarv.set_ticklabels([r'$10^{-20}$', r'$10^{-18}$', r'$10^{-16}$',
+                      r'$10^{-14}$', r'$10^{-12}$', r'$10^{-10}$'], fontsize=9)
+
+cax1 = fig2.add_axes([0.915, 0.405, 0.013, 0.25])
+cbar1 = fig2.colorbar(crho1_ref, cax=cax1, orientation='vertical')
+cbar1.ax.set_ylabel(r'$\rho_{ice}/\rho_{gas}$', fontsize=11)
+cbar1.set_ticks([0.001, 0.01, 0.05])
+cbar1.set_ticklabels(['0.001', '0.01', '0.05'], fontsize=9)
+
+caxT = fig2.add_axes([0.915, 0.125, 0.013, 0.25])
+cbarT = fig2.colorbar(C_Tem_ref, cax=caxT, orientation='vertical')
+cbarT.ax.set_ylabel(r'$T$ [K]', fontsize=11)
+
+fig2.savefig('./plots/compare_vap_obs.png', dpi=300, bbox_inches='tight')
+print('Saved: ./plots/compare_vap_obs.png')
 
 # short aliases used by the figures below
 d1 = data['DAS']   # single-pop active
@@ -652,148 +882,6 @@ plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
 # ══════════════════════════════════════════════════════════════════════════════
 #  Figure 2: vap_obs comparison
 # ══════════════════════════════════════════════════════════════════════════════
-
-def _mass_threshold(mass_map, rho_map, rad, theta, thres=0.99):
-    cells = []
-    total_mass = 0.0
-    for i in range(len(rad)):
-        for j in range(len(theta)):
-            if mass_map[i, j] > 0 and rho_map[i, j] > 0:
-                cells.append((rho_map[i, j], mass_map[i, j]))
-                total_mass += mass_map[i, j]
-    if total_mass == 0:
-        return 0.0
-    cells.sort(key=lambda x: x[0], reverse=True)
-    cum = 0.0
-    target = thres * total_mass
-    for density, mass in cells:
-        cum += mass
-        if cum >= target:
-            return density
-    return cells[-1][0]
-
-
-def plot_vap_obs(ax, d, show_legend=True):
-    """Plot vap_obs on a single axis. Returns (crhov, crho1, C_Tem) for colorbars."""
-    from matplotlib.patches import Patch
-
-    ax.set_ylim(0, 0.25)
-    ax.set_xlim(d['rin']/d['L_norm'], 3)
-    ax.set_ylabel(r'$z$ [AU]', fontsize=12)
-
-    # background vapor density (Greys)
-    crhov = ax.contourf(d['x_xz_c'], d['y_xz_c'],
-                d['vap_rho_xz'] * d['UNIT_DEN'],
-                levels=logspace(-19, -9, 10), norm=LogNorm(),
-                cmap='Greys', alpha=1.0, extend='both',
-                zorder=3, antialiased=True)
-
-    # ice-to-gas ratio
-    if d['N_pop'] == 1:
-        ice_ratio = d['ice_rho_mod'][d['ice_ids'][0]] / d['rho_xz']
-    else:
-        ice_sum = sum(d['ice_rho_mod'][iid] for iid in d['ice_ids'])
-        ice_ratio = ice_sum / d['rho_xz']
-
-    ice_colors = ['white', 'skyblue', 'deepskyblue', 'dodgerblue', 'blue', 'darkblue']
-    crho1 = ax.contourf(d['x_xz_c'], d['y_xz_c'], ice_ratio,
-                levels=logspace(log10(0.0005), log10(0.05), 7),
-                norm=LogNorm(), antialiased=True,
-                colors=ice_colors, alpha=0.7, extend='both', zorder=4)
-
-    # τ_ir = 1 contour
-    ax.contour(d['x_xz_c'], d['y_xz_c'], d['tau_ir'],
-               levels=array([1.0]), colors='purple',
-               linestyles='dashed', linewidths=3.0, zorder=5)
-
-    # ── vapor colored by temperature ──
-    vap_rho = d['vap_rho_xz'] * d['UNIT_DEN']
-    tem_xz = d['tem_xz']
-    tau_ir = d['tau_ir']
-    rad   = d['rad']
-    rad_f = d['rad_f']
-    theta = d['theta']
-    theta_f = d['theta_f']
-    UNIT_M = d['UNIT_M']
-
-    vap_cold = ma.masked_where(~((tem_xz < 150) & (vap_rho > 0)), vap_rho)
-    vap_warm = ma.masked_where(~((tem_xz >= 150) & (tem_xz < 400) & (vap_rho > 0)), vap_rho)
-    vap_hot  = ma.masked_where(~((tem_xz >= 400) & (vap_rho > 0)), vap_rho)
-
-    # mass integration
-    m_cold_M = zeros_like(d['vap_rho_xz'])
-    m_warm_M = zeros_like(d['vap_rho_xz'])
-    m_hot_M  = zeros_like(d['vap_rho_xz'])
-    for i in range(len(rad)):
-        for j in range(len(theta)):
-            if tem_xz[i, j] < 150 and tau_ir[i, j] < 1.0:
-                m_cold_M[i, j] = d['vap_rho_xz'][i, j] * rad[i]**2 * sin(theta[j]) \
-                    * diff(rad_f)[i] * diff(theta_f)[j] * 2*pi * UNIT_M
-            elif tem_xz[i, j] >= 150 and tem_xz[i, j] < 400 and tau_ir[i, j] < 1.0:
-                m_warm_M[i, j] = d['vap_rho_xz'][i, j] * rad[i]**2 * sin(theta[j]) \
-                    * diff(rad_f)[i] * diff(theta_f)[j] * 2*pi * UNIT_M
-            elif tem_xz[i, j] >= 400 and tau_ir[i, j] < 1.0:
-                m_hot_M[i, j] = d['vap_rho_xz'][i, j] * rad[i]**2 * sin(theta[j]) \
-                    * diff(rad_f)[i] * diff(theta_f)[j] * 2*pi * UNIT_M
-
-    threshold_cold = _mass_threshold(m_cold_M, vap_rho, rad, theta, thres=0.95)
-    threshold_warm = _mass_threshold(m_warm_M, vap_rho, rad, theta, thres=0.95)
-    threshold_hot  = _mass_threshold(m_hot_M,  vap_rho, rad, theta, thres=0.95)
-
-    m_cold_tot = sum(m_cold_M)
-    m_warm_tot = sum(m_warm_M)
-    m_hot_tot  = sum(m_hot_M)
-
-    vap_cold_90 = ma.masked_where(~((tau_ir < 1.0) & (vap_cold > 0) & (vap_rho >= threshold_cold)), vap_rho)
-    vap_warm_90 = ma.masked_where(~((tau_ir < 1.0) & (vap_warm > 0) & (vap_rho >= threshold_warm)), vap_rho)
-    vap_hot_90  = ma.masked_where(~((tau_ir < 1.0) & (vap_hot > 0) & (vap_rho >= threshold_hot)), vap_rho)
-
-    levels_vap = logspace(-20, -8, 10)
-    ax.contourf(d['x_xz_c'],  d['y_xz_c'], vap_cold_90, levels=levels_vap,
-                norm=LogNorm(), colors=['blue'],  alpha=0.5, zorder=6, antialiased=True)
-    ax.contourf(d['x_xz_c'],  d['y_xz_c'], vap_warm_90, levels=levels_vap,
-                norm=LogNorm(), colors=['orange'], alpha=0.5, zorder=6, antialiased=True)
-    ax.contourf(d['x_xz_c'],  d['y_xz_c'], vap_hot_90,  levels=levels_vap,
-                norm=LogNorm(), colors=['red'],   alpha=0.5, zorder=6, antialiased=True)
-    ax.contourf(d['x_xz_c'], -d['y_xz_c'], vap_cold_90, levels=levels_vap,
-                norm=LogNorm(), colors=['blue'],  alpha=0.5, zorder=6, antialiased=True)
-    ax.contourf(d['x_xz_c'], -d['y_xz_c'], vap_warm_90, levels=levels_vap,
-                norm=LogNorm(), colors=['orange'], alpha=0.5, zorder=6, antialiased=True)
-    ax.contourf(d['x_xz_c'], -d['y_xz_c'], vap_hot_90,  levels=levels_vap,
-                norm=LogNorm(), colors=['red'],   alpha=0.5, zorder=6, antialiased=True)
-
-    # temperature contours
-    C_Tem = ax.contour(d['x_xz_c'],  d['y_xz_c'], tem_xz,
-               levels=linspace(100, 400, 5, endpoint=True),
-               cmap='coolwarm', alpha=0.8, linewidths=1.5,
-               linestyles='dashed', zorder=11)
-    ax.contour(d['x_xz_c'], -d['y_xz_c'], tem_xz,
-               levels=linspace(100, 400, 5, endpoint=True),
-               cmap='coolwarm', alpha=0.8, linewidths=1.5,
-               linestyles='dashed', zorder=11)
-    ax.contour(d['x_xz_c'],  d['y_xz_c'], tem_xz,
-               levels=linspace(100, 400, 5, endpoint=True),
-               colors='white', alpha=0.8, linewidths=2.8, zorder=10)
-    ax.contour(d['x_xz_c'], -d['y_xz_c'], tem_xz,
-               levels=linspace(100, 400, 5, endpoint=True),
-               colors='white', alpha=0.8, linewidths=2.8, zorder=10)
-
-    # legend — only on the left panel
-    if show_legend:
-        legend_elements = [
-            Patch(facecolor='blue',  alpha=0.5, label=r'$T<150$ K'),
-            Patch(facecolor='orange', alpha=0.5, label=r'$150<T<400$ K'),
-            Patch(facecolor='red',   alpha=0.5, label=r'$T>400$ K'),
-        ]
-        ax.legend(handles=legend_elements, loc='upper left', fontsize=10, framealpha=0.8)
-
-    # τ_ir annotation
-    ax.annotate(r'$\tau_{ir}=1$', xy=(2.5, 0.25), xytext=(2.5, 0.16),
-                fontsize=20, color='purple', zorder=10,
-                fontweight='bold', rotation=20)
-
-    return crhov, crho1, C_Tem, m_cold_tot, m_warm_tot, m_hot_tot
-
 
 # ── build vap_obs comparison figure ──────────────────────────────────────────
 import matplotlib.gridspec as gridspec
@@ -1142,17 +1230,6 @@ def _sigma_arrays(d):
     return sig_gas, sig_ice, sig_sil, sig_vap
 
 
-def _midplane_ratios(d):
-    """Midplane (theta_max row) solid/gas and vapor/gas density ratios."""
-    jm = int(argmax(d['theta']))
-    rho_m = d['rho_xz'][:, jm]
-    solid_m = sum([d['ice_rho_xz'][iid][:, jm] for iid in d['ice_ids']], axis=0)
-    solid_m = solid_m + sum([d['sil_rho_xz'][sid][:, jm]
-                             for sid in d['sil_rho_xz']], axis=0)
-    denom = where(rho_m > 0.0, rho_m, 1.0)
-    d2g = where(rho_m > 0.0, solid_m / denom, 0.0)
-    v2g = where(rho_m > 0.0, d['vap_rho_xz'][:, jm] / denom, 0.0)
-    return d2g, v2g
 
 
 figS, axS = plt.subplots(2, 4, figsize=(18, 9), sharex=True,
